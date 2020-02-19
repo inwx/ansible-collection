@@ -6,7 +6,7 @@ Module for managing dns records via the api.
 
 ```yaml
 - name: Create an A record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     record: test
@@ -15,7 +15,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create an A record in the ote environemnt
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     record: test
@@ -25,7 +25,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Delete the A record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     record: test
@@ -34,7 +34,7 @@ Module for managing dns records via the api.
     state: absent
 
 - name: Create an example.com A record with value 127.0.0.1
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     value: 127.0.0.1
@@ -42,7 +42,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create another example.com A record with value 127.0.0.2 with custom ttl
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     value: 127.0.0.2
@@ -51,7 +51,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Update ttl of example.com A record with value 127.0.0.1
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     value: 127.0.0.1
@@ -60,7 +60,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create an test.example.com AAAA record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: AAAA
     record: test
@@ -69,7 +69,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create an test.example.com AFSDB record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: AFSDB
     record: test
@@ -79,7 +79,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a mail.example.com CNAME record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: CNAME
     record: mail
@@ -88,7 +88,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a test.example.com CAA record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: CAA
     record: test
@@ -99,7 +99,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a test.example.com HINFO record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: HINFO
     record: test
@@ -108,7 +108,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a test.example.com LOC record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: LOC
     record: test
@@ -117,7 +117,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a mail.example.com MX record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: MX
     record: mail
@@ -127,7 +127,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a test.example.com NAPTR record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: NAPTR
     record: test
@@ -140,7 +140,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a example.com NS record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: NS
     value: 'ns1.exampleserver.net'
@@ -149,7 +149,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a example.com RP record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: RP
     value: mail@example.com
@@ -157,7 +157,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Update example.com's SOA record value and ttl
-  inwx_dns:
+  inwx.collection.dns:
     domain: '{{ domain }}'
     type: SOA
     value: 'ns.ote.inwx.de hostmaster@inwx.de 2019103186'
@@ -166,7 +166,7 @@ Module for managing dns records via the api.
     password: '{{ password }}'
 
 - name: Create a example.com SRV record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: SRV
     record: _foo._tcp.fooservice
@@ -178,7 +178,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a test.example.com SSHFP record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: SSHFP
     record: test
@@ -189,7 +189,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a TLSA record _25._tcp.mail.example.com
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: TLSA
     record: _25._tcp.mail
@@ -201,7 +201,7 @@ Module for managing dns records via the api.
     password: test_password
 
 - name: Create a test.example.com TXT record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: TXT
     record: test

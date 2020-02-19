@@ -4,7 +4,15 @@ Collection of modules, playbooks and roles for the INWX api.
 
 ## Modules
 
-* [dns](inwx/dns/README.md)
+* [dns](plugins/docs/dns-module-documentation.md) (DNS management)
+
+## Playbooks
+
+TODO
+
+## Roles
+
+TODO
 
 License
 ----

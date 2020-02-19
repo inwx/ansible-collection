@@ -16,7 +16,7 @@ ANSIBLE_METADATA = {
 
 DOCUMENTATION = '''
 ---
-module: inwx_dns
+module: inwx.collection.dns
 author:
     - Nick Ufer (@NickUfer)
 requirements:
@@ -174,7 +174,7 @@ options:
 
 EXAMPLES = '''
 - name: Create an A record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     record: test
@@ -183,7 +183,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create an A record in the ote environemnt
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     record: test
@@ -193,7 +193,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Delete the A record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     record: test
@@ -202,7 +202,7 @@ EXAMPLES = '''
     state: absent
 
 - name: Create an example.com A record with value 127.0.0.1
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     value: 127.0.0.1
@@ -210,7 +210,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create another example.com A record with value 127.0.0.2 with custom ttl
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     value: 127.0.0.2
@@ -219,7 +219,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Update ttl of example.com A record with value 127.0.0.1
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: A
     value: 127.0.0.1
@@ -228,7 +228,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create an test.example.com AAAA record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: AAAA
     record: test
@@ -237,7 +237,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create an test.example.com AFSDB record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: AFSDB
     record: test
@@ -247,7 +247,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a mail.example.com CNAME record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: CNAME
     record: mail
@@ -256,7 +256,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a test.example.com CAA record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: CAA
     record: test
@@ -267,7 +267,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a test.example.com HINFO record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: HINFO
     record: test
@@ -276,7 +276,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a test.example.com LOC record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: LOC
     record: test
@@ -285,7 +285,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a mail.example.com MX record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: MX
     record: mail
@@ -295,7 +295,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a test.example.com NAPTR record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: NAPTR
     record: test
@@ -308,7 +308,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a example.com NS record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: NS
     value: 'ns1.exampleserver.net'
@@ -317,7 +317,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a example.com RP record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: RP
     value: mail@example.com
@@ -325,7 +325,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Update example.com's SOA record value and ttl
-  inwx_dns:
+  inwx.collection.dns:
     domain: '{{ domain }}'
     type: SOA
     value: 'ns.ote.inwx.de hostmaster@inwx.de 2019103186'
@@ -334,7 +334,7 @@ EXAMPLES = '''
     password: '{{ password }}'
 
 - name: Create a example.com SRV record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: SRV
     record: _foo._tcp.fooservice
@@ -346,7 +346,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a test.example.com SSHFP record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: SSHFP
     record: test
@@ -357,7 +357,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a TLSA record _25._tcp.mail.example.com
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: TLSA
     record: _25._tcp.mail
@@ -369,7 +369,7 @@ EXAMPLES = '''
     password: test_password
 
 - name: Create a test.example.com TXT record
-  inwx_dns:
+  inwx.collection.dns:
     domain: example.com
     type: TXT
     record: test
@@ -745,7 +745,7 @@ def remove_dict_none_values(dictionary):
     return filtered_dict
 
 def call_api_authenticated(module, method, params):
-    if module.params['api_environment'] == 'live':
+    if module.params['api_env'] == 'live':
         api_url = ApiClient.API_LIVE_URL
     else:
         api_url = ApiClient.API_OTE_URL
