@@ -36,7 +36,7 @@ options:
         required: false
     api_env:
         description:
-            - Defines which a API of which environment should be used.
+            - Defines which api should be used.
         type: str
         choices: [ live, ote ]
         default: 'live'
