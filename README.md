@@ -11,7 +11,7 @@ ansible-galaxy collection install inwx.collection
 
 Via github release:
 ```
-export VERSION=1.0.1 && ansible-galaxy collection install "https://github.com/inwx/ansible-collection/releases/download/$VERSION/inwx-collection-$VERSION.tar.gz"
+export VERSION=1.0.2 && ansible-galaxy collection install "https://github.com/inwx/ansible-collection/releases/download/$VERSION/inwx-collection-$VERSION.tar.gz"
 ```
 
 ## Modules
