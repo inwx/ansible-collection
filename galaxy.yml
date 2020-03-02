@@ -45,13 +45,13 @@ tags: [ inwx, collection, dns, api, domrobot ]
 dependencies: {}
 
 # The URL of the originating SCM repository
-repository: https://github.com/inwx/ansible-dns-collection
+repository: https://github.com/inwx/ansible-collection
 
 # The URL to any online docs
-documentation: https://github.com/inwx/ansible-dns-collection
+documentation: https://github.com/inwx/ansible-collection
 
 # The URL to the homepage of the collection/project
 homepage: https://inwx.com
 
 # The URL to the collection issue tracker
-issues: https://github.com/inwx/ansible-dns-collection/issues
+issues: https://github.com/inwx/ansible-collection/issues
