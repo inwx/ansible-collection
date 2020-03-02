@@ -4,11 +4,14 @@ Collection of modules, playbooks and roles for the INWX api.
 
 ## Installation
 
-Currently the collection is not available on ansible-galaxy but will be in the future.
-
-You can install the collection through an asset in our releases:
+Via ansible galaxy:
 ```
-ansible-galaxy collection install https://github.com/inwx/ansible-collection/releases/download/1.0.0/inwx-collection-1.0.0.tar.gz
+ansible-galaxy collection install inwx.collection
+```
+
+Via github release:
+```
+export VERSION=1.0.1 && ansible-galaxy collection install "https://github.com/inwx/ansible-collection/releases/download/$VERSION/inwx-collection-$VERSION.tar.gz"
 ```
 
 ## Modules
