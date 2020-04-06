@@ -122,6 +122,14 @@ options:
             - Required for C(type=SRV).
         type: str
         required: false
+    solo:
+        description:
+            - Wether the record should be the only one for that record name and type.
+            - Only works with `state=present`
+            - This will delete all other records with the same record name and type.
+        type: bool
+        required: false
+        default: false
     state:
         description:
             - Whether the record(s) should exist or not.
@@ -374,6 +382,16 @@ EXAMPLES = '''
     type: TXT
     record: test
     value: 'hello world'
+    username: test_user
+    password: test_password
+
+- name: Ensure that there is only one A record for test.example.com
+  inwx.collection.dns:
+    domain: example.com
+    type: A
+    record: test
+    value: 127.0.0.1
+    solo: yes
     username: test_user
     password: test_password
 '''
