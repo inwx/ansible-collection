@@ -759,10 +759,12 @@ def call_api_authenticated(module, method, params):
     return client.call_api(method, params)
 
 
-def get_records(module):
+def get_records(module, ignore_content=False):
     # hack for CAA search
     if module.params['type'] == 'CAA':
         content = convert_caa_record_to_type257(module)
+    elif ignore_content:
+        content = None
     else:
         content = build_record_content(module)
 
@@ -860,6 +862,7 @@ def run_module():
             record=dict(type='str', required=False, default='', aliases=['name']),
             selector=dict(type='int', required=False, choices=[0, 1]),
             service=dict(type='str', required=False),
+            solo=dict(type='bool', required=False, default=False),
             state=dict(type='str', choices=['present', 'absent'], default='present'),
             substitution=dict(type='str', required=False),
             ttl=dict(type='int', required=False, default=86400),
@@ -894,6 +897,15 @@ def run_module():
             module.exit_json(changed=False)
     elif module.params['state'] == 'present':
         check_present_state_required_arguments(module)
+        if module.params['solo']:
+            solomode_deletions=False
+            all_records = get_records(module, ignore_content=True)
+            if all_records:
+                for record in all_records:
+                    if record['content'] != module.params['value']:
+                        if not module.check_mode:
+                            delete_record(module, record['id'])
+                        solomode_deletions=True
         if module.params['type'] == 'SOA':
             # can only be one
             soa_record = found_records[0]
@@ -921,7 +933,7 @@ def run_module():
                 module.exit_json(changed=True, result={'record': updated_record})
             else:
                 # identical record exists.
-                module.exit_json(changed=False, result={'record': found_record})
+                module.exit_json(changed=module.params['solo'] and solomode_deletions, result={'record': found_record})
         else:
             # record doesn't exist, create it.
             if module.check_mode:
