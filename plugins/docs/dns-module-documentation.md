@@ -2,7 +2,18 @@
 
 Module for managing dns records via the api.
 
+## Requirements
+
+* Python 2.7+
+* Python `requests` module
+
 ## Examples
+
+### Playbooks
+
+* [Ready to go example playbook](../../playbooks/examples/dns_requests_installation.yml)
+
+### Tasks
 
 ```yaml
 - name: Create an A record
@@ -415,7 +426,7 @@ record:
             type: int
             sample: 3600
 api_response:
-    description: A dictionary containing the API response when an error occurrence.
+    description: A dictionary that contains the API response when an error has occurred.
     returned: failure
     type: str
 ```
