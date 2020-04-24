@@ -415,7 +415,7 @@ record:
             type: int
             sample: 3600
 api_response:
-    description: A dictionary containing the API response when an error occurrence.
+    description: A dictionary that contains the API response when an error has occurred.
     returned: failure
     type: str
 ```
