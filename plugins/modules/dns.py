@@ -438,6 +438,7 @@ api_response:
     type: str
 '''
 
+
 import base64
 import hashlib
 import hmac
@@ -447,19 +448,25 @@ import string
 import struct
 import sys
 import time
-import xmlrpc.client
-from enum import Enum
 
 import requests
 
+if sys.version_info.major == 3:
+    import xmlrpc.client
+else:
+    import xmlrpclib
 
-class ApiType(Enum):
+
+class ApiType:
     XML_RPC = '/xmlrpc/'
     JSON_RPC = '/jsonrpc/'
 
+    def __init__(self):
+        pass
+
 
 class ApiClient:
-    CLIENT_VERSION = '3.0.5'
+    CLIENT_VERSION = '3.1.0'
     API_LIVE_URL = 'https://api.domrobot.com'
     API_OTE_URL = 'https://api.ote.domrobot.com'
 
@@ -484,6 +491,7 @@ class ApiClient:
 
     def login(self, username, password, shared_secret=None):
         """Performs a login at the api and saves the session cookie for following api calls.
+
         Args:
             username: Your username.
             password: Your password.
@@ -520,6 +528,7 @@ class ApiClient:
 
     def logout(self):
         """Logs out the user and destroys the session.
+
         Returns:
             The api response body parsed as a dict.
         """
@@ -531,6 +540,7 @@ class ApiClient:
 
     def call_api(self, api_method, method_params=None):
         """Makes an api call.
+
         Args:
             api_method: The name of the method called in the api.
             method_params: A dict of parameters added to the request.
@@ -552,7 +562,10 @@ class ApiClient:
             method_params['clTRID'] = self.client_transaction_id
 
         if self.api_type == ApiType.XML_RPC:
-            payload = xmlrpc.client.dumps((method_params,), api_method, encoding='UTF-8').replace('\n', '')
+            if sys.version_info.major == 3:
+                payload = xmlrpc.client.dumps((method_params,), api_method, encoding='UTF-8').replace('\n', '')
+            else:
+                payload = xmlrpclib.dumps((method_params,), api_method, encoding='UTF-8').replace('\n', '')
         elif self.api_type == ApiType.JSON_RPC:
             payload = str(json.dumps({'method': api_method, 'params': method_params}))
         else:
@@ -563,21 +576,26 @@ class ApiClient:
             'User-Agent': 'DomRobot/' + ApiClient.CLIENT_VERSION + ' (Python ' + self.get_python_version() + ')'
         }
 
-        response = self.api_session.post(self.api_url + self.api_type.value, data=payload.encode('UTF-8'),
+        response = self.api_session.post(self.api_url + self.api_type, data=payload.encode('UTF-8'),
                                          headers=headers)
+        response.raise_for_status()
 
         if self.debug_mode:
             print('Request (' + api_method + '): ' + payload)
             print('Response (' + api_method + '): ' + response.text)
 
         if self.api_type == ApiType.XML_RPC:
-            return xmlrpc.client.loads(response.text)[0][0]
+            if sys.version_info.major == 3:
+                return xmlrpc.client.loads(response.text)[0][0]
+            else:
+                return xmlrpclib.loads(response.text)[0][0]
         elif self.api_type == ApiType.JSON_RPC:
             return response.json()
 
     @staticmethod
     def get_secret_code(shared_secret):
         """Generates a secret code for 2fa with a shared secret.
+
         Args:
             shared_secret: The shared secret used to generate the secret code.
         Returns:
