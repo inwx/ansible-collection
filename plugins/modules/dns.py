@@ -796,10 +796,7 @@ def call_api_authenticated(module, method, params):
 
 
 def get_records(module, ignore_content=False):
-    # hack for CAA search
-    if module.params['type'] == 'CAA':
-        content = convert_caa_record_to_type257(module)
-    elif ignore_content:
+    if ignore_content:
         content = None
     else:
         content = build_record_content(module)
