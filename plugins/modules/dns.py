@@ -438,7 +438,6 @@ api_response:
     type: str
 '''
 
-
 import base64
 import hashlib
 import hmac
@@ -780,6 +779,7 @@ def remove_dict_none_values(dictionary):
             filtered_dict[key] = value
     return filtered_dict
 
+
 def call_api_authenticated(module, method, params):
     if module.params['api_env'] == 'live':
         api_url = ApiClient.API_LIVE_URL
@@ -934,14 +934,14 @@ def run_module():
     elif module.params['state'] == 'present':
         check_present_state_required_arguments(module)
         if module.params['solo']:
-            solomode_deletions=False
+            solomode_deletions = False
             all_records = get_records(module, ignore_content=True)
             if all_records:
                 for record in all_records:
                     if record['content'] != module.params['value']:
                         if not module.check_mode:
                             delete_record(module, record['id'])
-                        solomode_deletions=True
+                        solomode_deletions = True
         if module.params['type'] == 'SOA':
             # can only be one
             soa_record = found_records[0]
