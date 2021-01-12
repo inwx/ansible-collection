@@ -915,7 +915,7 @@ def run_module():
             all_records = get_records(module, ignore_content=True)
             if all_records:
                 for record in all_records:
-                    if record['content'] != module.params['value']:
+                    if record['content'] != build_record_content(module):
                         if not module.check_mode:
                             delete_record(module, record['id'])
                         solomode_deletions = True
