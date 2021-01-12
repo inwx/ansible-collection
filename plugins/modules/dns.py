@@ -626,26 +626,6 @@ import traceback
 from ansible.module_utils.basic import AnsibleModule, missing_required_lib
 
 
-def convert_caa_record_to_type257(module):
-    tag = module.params['tag']
-    value = module.params['value']
-    hex_length = len(tag) + len('"' + value + '"')
-
-    flag = hex(int(module.params['flag']))[2:]
-    if len(flag) == 1:
-        flag = '0' + flag
-
-    tag_length = hex(len(tag))[2:]
-    if len(tag_length) == 1:
-        tag_length = '0' + tag_length
-
-    value = '\\# ' + str(hex_length) + ' ' + \
-            flag + \
-            tag_length + \
-            tag.encode('ascii').hex() + value.encode('ascii').hex()
-    return value
-
-
 def build_record_afsdb(module):
     keys = ('service', 'value')
     return ' '.join(map(lambda key: str(module.params[key]), keys))
@@ -767,7 +747,7 @@ def build_record_from_response(record_data):
         'type': record_data['type'],
         'name': record_data['name'],
         'content': record_data['content'],
-        'priority': record_data['prio'],
+        'priority': record_data.get('prio', 0),
         'ttl': record_data['ttl']
     }
 
