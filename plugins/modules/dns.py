@@ -147,7 +147,7 @@ options:
     ttl:
         description:
             - The TTL to give the new record.
-            - Must be between 3600 and 2,147,483,647 seconds.
+            - Must be between 300 and 864000 seconds.
         type: int
         required: false
         default: 86400
