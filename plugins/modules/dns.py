@@ -920,11 +920,11 @@ def check_and_install_module(module, python_module_name, pip_module_name=None, a
         pass
 
     if not import_successful:
-        # This interpreter can't see the apt Python library- we'll do the following to try and fix that:
+        # This interpreter can't see the Python library- we'll do the following to try and fix that:
         # 1) look in common locations for system-owned interpreters that can see it; if we find one, respawn under it
-        # 2) finding none, try to install a matching python-apt package for the current interpreter version;
+        # 2) finding none, try to install a matching python-apt package or pip package for the current interpreter version;
         #    we limit to the current interpreter version to try and avoid installing a whole other Python just
-        #    for apt support
+        #    for support
         # 3) if we installed a support package, try to respawn under what we think is the right interpreter (could be
         #    the current interpreter again, but we'll let it respawn anyway for simplicity)
         # 4) if still not working, return an error and give up (some corner cases not covered, but this shouldn't be
