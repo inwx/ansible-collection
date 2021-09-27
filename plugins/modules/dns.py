@@ -482,7 +482,12 @@ import struct
 import sys
 import time
 
-import requests
+# The requests may not be installed.
+# We check that further in the run_module function and install it if necessary
+try:
+    import requests
+except ImportError:
+    pass
 
 if sys.version_info.major == 3:
     import xmlrpc.client
@@ -733,8 +738,12 @@ def build_record_content(module):
 def get_record_fqdn(module):
     if module.params['type'] == 'PTR':
         if module.params['reversedns']:
-            check_and_install_module(module, 'netaddr', None, 'python3-netaddr')
+            if sys.version_info.major == 3:
+                check_and_install_module(module, 'netaddr', 'python3-netaddr')
+            elif sys.version_info.major == 2:
+                check_and_install_module(module, 'netaddr', 'python-netaddr')
             import netaddr
+
             return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns, '.' + remove_suffix(module.params['domain'], '.') + '.')
         else:
             return remove_suffix(remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')), '.')
@@ -906,7 +915,7 @@ def delete_record(module, record_id):
     call_api_authenticated(module, 'nameserver.deleteRecord', {'id': record_id})
 
 
-def check_and_install_module(module, python_module_name, pip_module_name=None, apt_module_name=None):
+def check_and_install_module(module, python_module_name, apt_module_name):
     """
     Installs the module with the name of python_module_name if it is not already installed.
     """
@@ -920,57 +929,38 @@ def check_and_install_module(module, python_module_name, pip_module_name=None, a
         pass
 
     if not import_successful:
-        # This interpreter can't see the Python library- we'll do the following to try and fix that:
-        # 1) look in common locations for system-owned interpreters that can see it; if we find one, respawn under it
-        # 2) finding none, try to install a matching python-apt package or pip package for the current interpreter version;
-        #    we limit to the current interpreter version to try and avoid installing a whole other Python just
-        #    for support
-        # 3) if we installed a support package, try to respawn under what we think is the right interpreter (could be
-        #    the current interpreter again, but we'll let it respawn anyway for simplicity)
-        # 4) if still not working, return an error and give up (some corner cases not covered, but this shouldn't be
-        #    made any more complex than it already is to try and cover more, eg, custom interpreters taking over
-        #    system locations)
-        if has_respawned():
-            # this shouldn't be possible; short-circuit early if it happens...
-            module.fail_json(msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
-
-        interpreters = ['/usr/bin/python3', '/usr/bin/python2', '/usr/bin/python']
-
+        interpreters = [sys.executable]
         interpreter = probe_interpreters_for_module(interpreters, python_module_name)
 
         if interpreter:
-            # found the Python bindings; respawn this module under the interpreter where we found them
-            respawn_module(interpreter)
-            # this is the end of the line for this process, it will exit here once the respawned module has completed
+            # Module was found in current version
+            return
 
         # don't make changes if we're in check_mode
         if module.check_mode:
             module.fail_json(msg="%s must be installed to use check mode. "
                                  "If run normally this module can auto-install it." % python_module_name)
 
-        if pip_module_name is not None:
-            # try to install the pip python package
-            module.run_command(['pip', 'install', '-q', pip_module_name], check_rc=True)
-        if apt_module_name is not None:
-            # We skip cache update in auto install the dependency if the
-            # user explicitly declared it with update_cache=no.
-            module.warn("Updating cache and auto-installing missing dependency: %s" % apt_module_name)
-            module.run_command(['apt-get', 'update'], check_rc=True)
+        module.warn("Updating cache and auto-installing missing dependency: %s" % apt_module_name)
+        module.run_command(['apt-get', 'update'], check_rc=True)
 
-            # try to install the apt python package
-            module.run_command(['apt-get', 'install', '--no-install-recommends', apt_module_name, '-y', '-q'],
-                               check_rc=True)
+        # try to install the apt python package
+        module.run_command(['apt-get', 'install', '--no-install-recommends', apt_module_name, '-y', '-q'],
+                           check_rc=True)
 
         # try again to find the bindings in common places
         interpreter = probe_interpreters_for_module(interpreters, python_module_name)
 
-        if interpreter:
-            # found the Python bindings; respawn this module under the interpreter where we found them
-            # NB: respawn is somewhat wasteful if it's this interpreter, but simplifies the code
-            respawn_module(interpreter)
-            # this is the end of the line for this process, it will exit here once the respawned module has completed
-        else:
-            # we've done all we can do; just tell the user it's busted and get out
+        import_successful = False
+        import importlib
+        try:
+            importlib.import_module(python_module_name)
+            globals()[python_module_name] = importlib.import_module(python_module_name)
+            import_successful = True
+        except ImportError:
+            pass
+
+        if not interpreter and import_successful:
             module.fail_json(msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
 
 
@@ -1009,6 +999,12 @@ def run_module():
             ('state', 'present', ['record', 'type'])
         ]
     )
+
+    # Required for Domrobot
+    if sys.version_info.major == 3:
+        check_and_install_module(module, 'requests', 'python3-requests')
+    elif sys.version_info.major == 2:
+        check_and_install_module(module, 'requests', 'python-requests')
 
     found_records = get_records(module)
 
