@@ -319,7 +319,39 @@ EXAMPLES = '''
   inwx.collection.dns:
     domain: example.com
     type: NS
+    record: ''
     value: 'ns1.exampleserver.net'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record. With only host part as record
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0'
+    type: PTR
+    value: 'server-1.example.com'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa'
+    type: PTR
+    value: 'server-1.example.com'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record. Automatically generate reverse dns record from server ip
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '2001:db8::1'
+    reversedns: yes
+    type: PTR
+    value: 'server-1.example.com'
     ttl: 86400
     username: test_user
     password: test_password
@@ -328,6 +360,7 @@ EXAMPLES = '''
   inwx.collection.dns:
     domain: example.com
     type: RP
+    record: ''
     value: mail@example.com
     username: test_user
     password: test_password
@@ -336,6 +369,7 @@ EXAMPLES = '''
   inwx.collection.dns:
     domain: '{{ domain }}'
     type: SOA
+    record: ''
     value: 'ns.ote.inwx.de hostmaster@inwx.de 2019103186'
     ttl: 86400
     username: '{{ username }}'
