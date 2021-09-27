@@ -733,7 +733,7 @@ def build_record_content(module):
 def get_record_fqdn(module):
     if module.params['type'] == 'PTR':
         if module.params['reversedns']:
-            check_and_install_module(module, 'netaddr', 'netaddr')
+            check_and_install_module(module, 'netaddr', None, 'python3-netaddr')
             import netaddr
             return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns, '.' + remove_suffix(module.params['domain'], '.') + '.')
         else:
@@ -950,15 +950,15 @@ def check_and_install_module(module, python_module_name, pip_module_name=None, a
 
         if pip_module_name is not None:
             # try to install the pip python package
-            module.run_command(['pip', 'install', '-q', python_module_name], check_rc=True)
+            module.run_command(['pip', 'install', '-q', pip_module_name], check_rc=True)
         if apt_module_name is not None:
             # We skip cache update in auto install the dependency if the
             # user explicitly declared it with update_cache=no.
-            module.warn("Updating cache and auto-installing missing dependency: %s" % python_module_name)
+            module.warn("Updating cache and auto-installing missing dependency: %s" % apt_module_name)
             module.run_command(['apt-get', 'update'], check_rc=True)
 
             # try to install the apt python package
-            module.run_command(['apt-get', 'install', '--no-install-recommends', python_module_name, '-y', '-q'],
+            module.run_command(['apt-get', 'install', '--no-install-recommends', apt_module_name, '-y', '-q'],
                                check_rc=True)
 
         # try again to find the bindings in common places
