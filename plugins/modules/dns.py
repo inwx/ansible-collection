@@ -662,7 +662,7 @@ class ApiClient:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.common.respawn import has_respawned, probe_interpreters_for_module, respawn_module
+from ansible.module_utils.common.respawn import probe_interpreters_for_module
 
 
 def remove_suffix(input_string, suffix):
