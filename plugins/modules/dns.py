@@ -622,8 +622,14 @@ class ApiClient:
         return '.'.join(tuple(str(x) for x in sys.version_info))
 
 
-import traceback
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.common.respawn import has_respawned, probe_interpreters_for_module, respawn_module
+
+
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
 
 
 def build_record_afsdb(module):
@@ -691,6 +697,14 @@ def build_record_content(module):
 
 
 def get_record_fqdn(module):
+    if module.params['type'] == 'PTR':
+        if module.params['reversedns']:
+            check_and_install_module(module, 'netaddr', 'netaddr')
+            import netaddr
+            return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns, '.' + remove_suffix(module.params['domain'], '.') + '.')
+        else:
+            return remove_suffix(remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')), '.')
+
     fqdn = ''
     if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
         fqdn = module.params['record'] + '.'
@@ -858,6 +872,74 @@ def delete_record(module, record_id):
     call_api_authenticated(module, 'nameserver.deleteRecord', {'id': record_id})
 
 
+def check_and_install_module(module, python_module_name, pip_module_name=None, apt_module_name=None):
+    """
+    Installs the module with the name of python_module_name if it is not already installed.
+    """
+    import_successful = False
+
+    import importlib
+    try:
+        importlib.import_module(python_module_name)
+        import_successful = True
+    except ImportError:
+        pass
+
+    if not import_successful:
+        # This interpreter can't see the apt Python library- we'll do the following to try and fix that:
+        # 1) look in common locations for system-owned interpreters that can see it; if we find one, respawn under it
+        # 2) finding none, try to install a matching python-apt package for the current interpreter version;
+        #    we limit to the current interpreter version to try and avoid installing a whole other Python just
+        #    for apt support
+        # 3) if we installed a support package, try to respawn under what we think is the right interpreter (could be
+        #    the current interpreter again, but we'll let it respawn anyway for simplicity)
+        # 4) if still not working, return an error and give up (some corner cases not covered, but this shouldn't be
+        #    made any more complex than it already is to try and cover more, eg, custom interpreters taking over
+        #    system locations)
+        if has_respawned():
+            # this shouldn't be possible; short-circuit early if it happens...
+            module.fail_json(msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
+
+        interpreters = ['/usr/bin/python3', '/usr/bin/python2', '/usr/bin/python']
+
+        interpreter = probe_interpreters_for_module(interpreters, python_module_name)
+
+        if interpreter:
+            # found the Python bindings; respawn this module under the interpreter where we found them
+            respawn_module(interpreter)
+            # this is the end of the line for this process, it will exit here once the respawned module has completed
+
+        # don't make changes if we're in check_mode
+        if module.check_mode:
+            module.fail_json(msg="%s must be installed to use check mode. "
+                                 "If run normally this module can auto-install it." % python_module_name)
+
+        if pip_module_name is not None:
+            # try to install the pip python package
+            module.run_command(['pip', 'install', '-q', python_module_name], check_rc=True)
+        if apt_module_name is not None:
+            # We skip cache update in auto install the dependency if the
+            # user explicitly declared it with update_cache=no.
+            module.warn("Updating cache and auto-installing missing dependency: %s" % python_module_name)
+            module.run_command(['apt-get', 'update'], check_rc=True)
+
+            # try to install the apt python package
+            module.run_command(['apt-get', 'install', '--no-install-recommends', python_module_name, '-y', '-q'],
+                               check_rc=True)
+
+        # try again to find the bindings in common places
+        interpreter = probe_interpreters_for_module(interpreters, python_module_name)
+
+        if interpreter:
+            # found the Python bindings; respawn this module under the interpreter where we found them
+            # NB: respawn is somewhat wasteful if it's this interpreter, but simplifies the code
+            respawn_module(interpreter)
+            # this is the end of the line for this process, it will exit here once the respawned module has completed
+        else:
+            # we've done all we can do; just tell the user it's busted and get out
+            module.fail_json(msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
+
+
 def run_module():
     module = AnsibleModule(
         argument_spec=dict(
@@ -873,6 +955,7 @@ def run_module():
             priority=dict(type='int', required=False, default=1),
             port=dict(type='int', required=False),
             record=dict(type='str', required=False, default='', aliases=['name']),
+            reversedns=dict(type='bool', required=False, default=False),
             selector=dict(type='int', required=False, choices=[0, 1]),
             service=dict(type='str', required=False),
             solo=dict(type='bool', required=False, default=False),
