@@ -109,6 +109,13 @@ options:
         required: false
         default: ''
         aliases: [ name ]
+    reversedns:
+        description:
+            - Whether the record (an IP) should be converted to a reverse dns value.
+            - Only works with C(type=PTR).
+        type: bool
+        required: false
+        default: false
     selector:
         description:
             - Selector number.
