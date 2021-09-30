@@ -319,7 +319,39 @@ EXAMPLES = '''
   inwx.collection.dns:
     domain: example.com
     type: NS
+    record: ''
     value: 'ns1.exampleserver.net'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record. With only host part as record
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0'
+    type: PTR
+    value: 'server-1.example.com'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa'
+    type: PTR
+    value: 'server-1.example.com'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record. Automatically generate reverse dns record from server ip
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '2001:db8::1'
+    reversedns: yes
+    type: PTR
+    value: 'server-1.example.com'
     ttl: 86400
     username: test_user
     password: test_password
@@ -328,6 +360,7 @@ EXAMPLES = '''
   inwx.collection.dns:
     domain: example.com
     type: RP
+    record: ''
     value: mail@example.com
     username: test_user
     password: test_password
@@ -336,6 +369,7 @@ EXAMPLES = '''
   inwx.collection.dns:
     domain: '{{ domain }}'
     type: SOA
+    record: ''
     value: 'ns.ote.inwx.de hostmaster@inwx.de 2019103186'
     ttl: 86400
     username: '{{ username }}'
@@ -448,7 +482,12 @@ import struct
 import sys
 import time
 
-import requests
+# The requests may not be installed.
+# We check that further in the run_module function and install it if necessary
+try:
+    import requests
+except ImportError:
+    pass
 
 if sys.version_info.major == 3:
     import xmlrpc.client
@@ -622,8 +661,14 @@ class ApiClient:
         return '.'.join(tuple(str(x) for x in sys.version_info))
 
 
-import traceback
-from ansible.module_utils.basic import AnsibleModule, missing_required_lib
+from ansible.module_utils.basic import AnsibleModule
+from ansible.module_utils.common.respawn import probe_interpreters_for_module
+
+
+def remove_suffix(input_string, suffix):
+    if suffix and input_string.endswith(suffix):
+        return input_string[:-len(suffix)]
+    return input_string
 
 
 def build_record_afsdb(module):
@@ -691,6 +736,18 @@ def build_record_content(module):
 
 
 def get_record_fqdn(module):
+    if module.params['type'] == 'PTR':
+        if module.params['reversedns']:
+            if sys.version_info.major == 3:
+                check_and_install_module(module, 'netaddr', 'python3-netaddr')
+            elif sys.version_info.major == 2:
+                check_and_install_module(module, 'netaddr', 'python-netaddr')
+            import netaddr
+
+            return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns, '.' + remove_suffix(module.params['domain'], '.') + '.')
+        else:
+            return remove_suffix(remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')), '.')
+
     fqdn = ''
     if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
         fqdn = module.params['record'] + '.'
@@ -858,6 +915,54 @@ def delete_record(module, record_id):
     call_api_authenticated(module, 'nameserver.deleteRecord', {'id': record_id})
 
 
+def check_and_install_module(module, python_module_name, apt_module_name):
+    """
+    Installs the module with the name of python_module_name if it is not already installed.
+    """
+    import_successful = False
+
+    import importlib
+    try:
+        importlib.import_module(python_module_name)
+        import_successful = True
+    except ImportError:
+        pass
+
+    if not import_successful:
+        interpreters = [sys.executable]
+        interpreter = probe_interpreters_for_module(interpreters, python_module_name)
+
+        if interpreter:
+            # Module was found in current version
+            return
+
+        # don't make changes if we're in check_mode
+        if module.check_mode:
+            module.fail_json(msg="%s must be installed to use check mode. "
+                                 "If run normally this module can auto-install it." % python_module_name)
+
+        module.warn("Updating cache and auto-installing missing dependency: %s" % apt_module_name)
+        module.run_command(['apt-get', 'update'], check_rc=True)
+
+        # try to install the apt python package
+        module.run_command(['apt-get', 'install', '--no-install-recommends', apt_module_name, '-y', '-q'],
+                           check_rc=True)
+
+        # try again to find the bindings in common places
+        interpreter = probe_interpreters_for_module(interpreters, python_module_name)
+
+        import_successful = False
+        import importlib
+        try:
+            globals()[python_module_name] = importlib.import_module(python_module_name)
+            import_successful = True
+        except ImportError:
+            pass
+
+        if not interpreter and import_successful:
+            module.fail_json(msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
+
+
 def run_module():
     module = AnsibleModule(
         argument_spec=dict(
@@ -873,6 +978,7 @@ def run_module():
             priority=dict(type='int', required=False, default=1),
             port=dict(type='int', required=False),
             record=dict(type='str', required=False, default='', aliases=['name']),
+            reversedns=dict(type='bool', required=False, default=False),
             selector=dict(type='int', required=False, choices=[0, 1]),
             service=dict(type='str', required=False),
             solo=dict(type='bool', required=False, default=False),
@@ -892,6 +998,12 @@ def run_module():
             ('state', 'present', ['record', 'type'])
         ]
     )
+
+    # Required for Domrobot
+    if sys.version_info.major == 3:
+        check_and_install_module(module, 'requests', 'python3-requests')
+    elif sys.version_info.major == 2:
+        check_and_install_module(module, 'requests', 'python-requests')
 
     found_records = get_records(module)
 
