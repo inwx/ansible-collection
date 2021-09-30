@@ -954,7 +954,6 @@ def check_and_install_module(module, python_module_name, apt_module_name):
         import_successful = False
         import importlib
         try:
-            importlib.import_module(python_module_name)
             globals()[python_module_name] = importlib.import_module(python_module_name)
             import_successful = True
         except ImportError:
