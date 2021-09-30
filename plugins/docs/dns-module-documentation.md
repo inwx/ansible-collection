@@ -154,7 +154,39 @@ Module for managing dns records via the api.
   inwx.collection.dns:
     domain: example.com
     type: NS
+    record: ''
     value: 'ns1.exampleserver.net'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record. With only host part as record
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0'
+    type: PTR
+    value: 'server-1.example.com'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.8.b.d.0.1.0.0.2.ip6.arpa'
+    type: PTR
+    value: 'server-1.example.com'
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a server-1.example.com PTR record. Automatically generate reverse dns record from server ip
+  inwx.collection.dns:
+    domain: '8.b.d.0.1.0.0.2.ip6.arpa'
+    record: '2001:db8::1'
+    reversedns: yes
+    type: PTR
+    value: 'server-1.example.com'
     ttl: 86400
     username: test_user
     password: test_password
@@ -163,6 +195,7 @@ Module for managing dns records via the api.
   inwx.collection.dns:
     domain: example.com
     type: RP
+    record: ''
     value: mail@example.com
     username: test_user
     password: test_password
@@ -171,6 +204,7 @@ Module for managing dns records via the api.
   inwx.collection.dns:
     domain: '{{ domain }}'
     type: SOA
+    record: ''
     value: 'ns.ote.inwx.de hostmaster@inwx.de 2019103186'
     ttl: 86400
     username: '{{ username }}'
@@ -220,7 +254,7 @@ Module for managing dns records via the api.
     username: test_user
     password: test_password
 
-- name: Ensure that there is only one A record of test.example.com
+- name: Ensure that there is only one A record for test.example.com
   inwx.collection.dns:
     domain: example.com
     type: A
@@ -316,6 +350,13 @@ options:
         required: false
         default: ''
         aliases: [ name ]
+    reversedns:
+        description:
+            - Whether the record (an IP) should be converted to a reverse dns value.
+            - Only works with C(type=PTR).
+        type: bool
+        required: false
+        default: false
     selector:
         description:
             - Selector number.
@@ -354,7 +395,7 @@ options:
     ttl:
         description:
             - The TTL to give the new record.
-            - Must be between 3600 and 2,147,483,647 seconds.
+            - Must be between 300 and 864000 seconds.
         type: int
         required: false
         default: 86400
