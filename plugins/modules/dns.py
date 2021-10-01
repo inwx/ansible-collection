@@ -446,7 +446,7 @@ EXAMPLES = '''
     ttl: 86400
     username: test_user
     password: test_password
-    
+
 - name: Create a example.com OPENPGPKEY record example2
   inwx.collection.dns:
     domain: example.com
@@ -941,6 +941,11 @@ def build_record_tlsa(module):
     return ' '.join(map(lambda key: str(module.params[key]), keys))
 
 
+def build_record_uri(module):
+    keys = ('priority', 'weight', '"' + 'value' + '"')
+    return ' '.join(map(lambda key: str(module.params[key]), keys))
+
+
 def build_default_record(module):
     return module.params['value']
 
@@ -968,7 +973,8 @@ def build_record_content(module):
         'SRV': build_record_srv,
         'SSHFP': build_record_sshfp,
         'TLSA': build_record_tlsa,
-        'TXT': build_default_record
+        'TXT': build_default_record,
+        'URI': build_record_uri,
     }
 
     return switcher.get(str(module.params['type']).upper())(module)
@@ -1061,7 +1067,8 @@ def check_present_state_required_arguments(module):
         'SRV': ['priority', 'port', 'value'],
         'SSHFP': ['algorithm', 'hash_type', 'value'],
         'TLSA': ['cert_usage', 'selector', 'hash_type', 'value'],
-        'TXT': ['value']
+        'TXT': ['value'],
+        'URI': ['priority', 'weight', 'value']
     }
 
     unsatisfied_params = required_params_for_type[module.params['type']]
@@ -1271,7 +1278,7 @@ def run_module():
             type=dict(type='str', required=True,
                       choices=['A', 'AAAA', 'AFSDB', 'ALIAS', 'CAA', 'CERT', 'CNAME', 'HINFO', 'KEY', 'LOC', 'MX',
                                'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SMIMEA', 'SOA', 'SRV', 'SSHFP',
-                               'TLSA', 'TXT']),
+                               'TLSA', 'TXT', 'URI']),
             username=dict(type='str', required=True, aliases=['user']),
             value=dict(type='str', required=False, aliases=['content'], default=''),
             weight=dict(type='int', required=False, default=1),
