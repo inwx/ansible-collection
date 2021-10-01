@@ -908,7 +908,13 @@ def build_record_naptr(module):
 
 
 def build_record_openpgpkey(module):
-    return re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value'])
+    trimmed = re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value'])
+    # Removing checksum from end of key
+    if len(trimmed) < 5:
+        module.fail_json(msg='Supplied "value" value is too short.')
+    if trimmed[-5] == "=":
+        trimmed = remove_suffix(trimmed, trimmed[-5:])
+    return trimmed
 
 
 def build_record_smimea(module):
@@ -954,7 +960,7 @@ def build_record_content(module):
         'MX': build_default_record,
         'NAPTR': build_record_naptr,
         'NS': build_default_record,
-        'OPENPGPKEY': build_default_record,
+        'OPENPGPKEY': build_record_openpgpkey,
         'PTR': build_default_record,
         'RP': build_default_record,
         'SMIMEA': build_record_smimea,
@@ -988,11 +994,9 @@ def get_record_fqdn(module):
             used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
 
         record = used_hash + '._smimecert.'
-        fqdn = ''
         if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
-            fqdn = module.params['record'] + '.'
-        fqdn += module.params['domain']
-        return record + fqdn
+            record += '.' + module.params['record']
+        return record + '.' + module.params['domain']
     elif module.params['type'] == 'OPENPGPKEY':
         used_hash = str(module.params['hash'])
         if re.match('^[a-fA-F0-9]$', used_hash):
@@ -1011,12 +1015,10 @@ def get_record_fqdn(module):
             m.update(used_hash)
             used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
 
-        record = used_hash + '._openpgpkey.'
-        fqdn = ''
+        record = used_hash + '._openpgpkey'
         if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
-            fqdn = module.params['record'] + '.'
-        fqdn += module.params['domain']
-        return record + fqdn
+            record += '.' + module.params['record']
+        return record + '.' + module.params['domain']
     elif module.params['type'] == 'PTR':
         if module.params['reversedns']:
             if sys.version_info.major == 3:
