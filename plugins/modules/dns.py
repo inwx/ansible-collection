@@ -212,7 +212,7 @@ options:
             - The type of DNS record.
         type: str
         required: false
-        choices: [ A, AAAA, AFSDB, ALIAS, CAA, CERT, CNAME, HINFO, KEY, LOC, MX, NAPTR, NS, OPENPGPKEY, PTR, RP, SMIMEA, SOA, SRV, SSHFP, TLSA, TXT ]
+        choices: [ A, AAAA, AFSDB, ALIAS, CAA, CERT, CNAME, HINFO, KEY, LOC, MX, NAPTR, NS, OPENPGPKEY, PTR, RP, SMIMEA, SOA, SRV, SSHFP, TLSA, TXT, URI ]
     username:
         description:
             - INWX Account Username
@@ -608,7 +608,7 @@ EXAMPLES = '''
     username: test_user
     password: test_password
 
-- name: Create a test.example.com TXT record
+- name: Create a test.example.com URI record
   inwx.collection.dns:
     domain: example.com
     type: URI
