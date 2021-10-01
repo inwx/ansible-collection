@@ -1253,7 +1253,7 @@ def run_module():
             hash_type=dict(type='int', required=False),
             key_flags=dict(type='int', required=False),
             key_protocol=dict(type='int', required=False),
-            matching_type=dict('int', required=False, choices=[0, 1]),
+            matching_type=dict(type='int', required=False, choices=[0, 1]),
             regex=dict(type='str', required=False),
             password=dict(type='str', required=True, aliases=['pass'], no_log=True),
             priority=dict(type='int', required=False, default=1),
