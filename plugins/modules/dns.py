@@ -31,6 +31,9 @@ options:
     algorithm:
         description:
             - Algorithm number.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.2
+            - Required for C(type=CERT) when C(state=present).
+            - Required for C(type=KEY) when C(state=present).
             - Required for C(type=SSHFP) when C(state=present).
         type: int
         required: false
@@ -41,6 +44,33 @@ options:
         choices: [ live, ote ]
         default: 'live'
         required: false
+    cert_usage:
+        description:
+            - Certificate usage number.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.1
+            - Required for C(type=TLSA) when C(state=present).
+        type: int
+        choices: [ 0, 1, 2, 3 ]
+        required: false
+    cert_key_tag:
+        description:
+            - 16 bit value computed for the key embedded in the certificate as specified in the DNSSEC Standard [RFC 2535].
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-4.1.6
+            - Required for C(type=CERT) when C(state=present).
+        type: int
+        required: false
+    cert_type:
+        description:
+            - Certificate Type.
+            - https://datatracker.ietf.org/doc/html/rfc2538.html#section-2.1
+            - Required for C(type=CERT) when C(state=present).
+        type: int
+        required: false
+    domain:
+        description:
+            - The name of the Domain to work with (e.g. "example.com").
+        type: str
+        required: true
     flag:
         description:
             - Flag for C(type=CAA) record defining if record is critical.
@@ -48,38 +78,40 @@ options:
             - Required for C(type=CAA) and C(type=NAPTR) when C(state=present).
         type: str
         required: false
-    tag:
+    hash:
         description:
-            - Tag identifier.
-            - An ASCII string that defines the identifier of the property represented by the record.
-            - Required for C(type=CAA) when C(state=present).
-        type: str
-        choices: [ issue, issuewild, iodef ]
-        required: false
-    cert_usage:
-        description:
-            - Certificate usage number.
-            - Required for C(type=TLSA) when C(state=present).
-        type: int
-        choices: [ 0, 1, 2, 3 ]
-        required: false
-    domain:
-        description:
-            - The name of the Domain to work with (e.g. "example.com").
-        type: str
-        required: true
+            - A hash (ex. SHA-256) in hex digits.
+            - Must be at least 56 digits long.
+            - Can be an email name for C(type=SMIMEA)
+            - Required for C(type=OPENPGPKEY) when C(state=present)
+            - Required for C(type=SMIMEA) when C(state=present)
     hash_type:
         description:
             - Hash type number.
             - Required for C(type=SSHFP) and C(type=TLSA) when C(state=present).
         type: int
         required: false
-    regex:
+    key_flags:
         description:
-            - Regex string.
-            - Defines what should be replaced with the defined C(substitution).
-            - Required for C(type=NAPTR) when C(state=present).
-        type: str
+            - Key Flags Field.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.1.2
+            - Required for C(type=KEY) when C(state=present).
+        type: int
+        required: false
+    key_protocol:
+        description:
+            - Protocol Octet.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.1.3
+            - Required for C(type=KEY) when C(state=present).
+        type: int
+        required: false
+    matching_type:
+        description:
+            - Certificate Matching Type.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.3
+            - Required for C(type=SMIMEA) when C(state=present).
+        type: int
+        choices: [ 0, 1 ]
         required: false
     password:
         description:
@@ -109,6 +141,13 @@ options:
         required: false
         default: ''
         aliases: [ name ]
+    regex:
+        description:
+            - Regex string.
+            - Defines what should be replaced with the defined C(substitution).
+            - Required for C(type=NAPTR) when C(state=present).
+        type: str
+        required: false
     reversedns:
         description:
             - Whether the record (an IP) should be converted to a reverse dns value.
@@ -119,7 +158,9 @@ options:
     selector:
         description:
             - Selector number.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.2
             - Required for C(type=TLSA) when C(state=present).
+            - Required for C(type=SMIMEA) when C(state=present).
         type: int
         required: false
         choices: [ 0, 1 ]
@@ -151,6 +192,14 @@ options:
             - Required for C(type=NAPTR) when C(state=present).
         type: str
         required: false
+    tag:
+        description:
+            - Tag identifier.
+            - An ASCII string that defines the identifier of the property represented by the record.
+            - Required for C(type=CAA) when C(state=present).
+        type: str
+        choices: [ issue, issuewild, iodef ]
+        required: false
     ttl:
         description:
             - The TTL to give the new record.
@@ -163,7 +212,7 @@ options:
             - The type of DNS record.
         type: str
         required: false
-        choices: [ A, AAAA, AFSDB, CAA, CNAME, HINFO, LOC, MX, NAPTR, NS, PTR, RP, SOA, SRV, SSHFP, TLSA, TXT ]
+        choices: [ A, AAAA, AFSDB, ALIAS, CAA, CERT, CNAME, HINFO, KEY, LOC, MX, NAPTR, NS, OPENPGPKEY, PTR, RP, SMIMEA, SOA, SRV, SSHFP, TLSA, TXT ]
     username:
         description:
             - INWX Account Username
