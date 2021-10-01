@@ -1033,9 +1033,12 @@ def get_record_fqdn(module):
                 check_and_install_module(module, 'netaddr', 'python-netaddr')
             import netaddr
 
-            return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns, '.' + remove_suffix(module.params['domain'], '.') + '.')
+            return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns,
+                                 '.' + remove_suffix(module.params['domain'], '.') + '.')
         else:
-            return remove_suffix(remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')), '.')
+            return remove_suffix(
+                remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')),
+                '.')
     else:
         fqdn = ''
         if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
@@ -1252,6 +1255,7 @@ def run_module():
     module = AnsibleModule(
         argument_spec=dict(
             algorithm=dict(type='int', required=False),
+            api_env=dict(type='str', reduired=False, default='live', choices=['live', 'ote']),
             flag=dict(type='str', required=False),
             tag=dict(type='str', required=False, choices=['issue', 'issuewild', 'iodef']),
             cert_usage=dict(type='int', required=False, choices=[0, 1, 2, 3]),
