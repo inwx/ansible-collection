@@ -908,12 +908,15 @@ def build_record_naptr(module):
 
 
 def build_record_openpgpkey(module):
-    return ''
+    return re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value'])
 
 
 def build_record_smimea(module):
     values = (
-    module.params['cert_usage'], module.params['selector'], module.params['matching_type'], module.params['value'])
+        module.params['cert_usage'],
+        module.params['selector'],
+        module.params['matching_type'],
+        re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value']))
     return ' '.join(map(str, values))
 
 
