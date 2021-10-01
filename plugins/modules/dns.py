@@ -246,7 +246,7 @@ EXAMPLES = '''
     username: test_user
     password: test_password
 
-- name: Create an A record in the ote environemnt
+- name: Create an A record in the ote environment
   inwx.collection.dns:
     domain: example.com
     type: A
