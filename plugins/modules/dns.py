@@ -847,12 +847,22 @@ def get_record_fqdn(module):
         fqdn += module.params['domain']
         return record + fqdn
     elif module.params['type'] == 'OPENPGPKEY':
-        used_hash = module.params['hash']
-        if len(used_hash) < 56:
-            module.fail_json(msg='Supplied "hash" value is too short, must be at least 56 characters long. Given: '
-                                 + str(len(used_hash)) + ' characters.')
-        elif len(used_hash) > 56:
-            used_hash = used_hash[0:56]  # hash should only be 56 chars long.
+        used_hash = str(module.params['hash'])
+        if re.match('^[a-fA-F0-9]$', used_hash):
+            if len(used_hash) < 56:
+                module.fail_json(msg='Supplied "hash" value is too short, must be at least 56 characters long. Given: '
+                                     + str(len(used_hash)) + ' characters.')
+            elif len(used_hash) > 56:
+                used_hash = used_hash[0:56]  # hash should only be 56 chars long.
+        else:
+            # Convenience Feature:
+            # If hash is not a hash try to manually calculate the hash.
+            if '@' in used_hash:
+                used_hash = used_hash.split('@')[0]
+            import hashlib
+            m = hashlib.sha256()
+            m.update(used_hash)
+            used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
 
         record = used_hash + '._openpgpkey.'
         fqdn = ''
@@ -894,10 +904,10 @@ def check_present_state_required_arguments(module):
         'MX': ['priority', 'value'],
         'NAPTR': ['flag', 'service', 'regex', 'substitution'],
         'NS': ['value'],
-        'OPENPGPKEY': ['hash'],
+        'OPENPGPKEY': ['hash', 'value'],
         'PTR': ['value'],
         'RP': ['value'],
-        'SMIMEA': ['cert_usage', 'selector', 'matching_type', 'value'],
+        'SMIMEA': ['cert_usage', 'hash', 'selector', 'matching_type', 'value'],
         'SOA': ['value'],
         'SRV': ['priority', 'port', 'value'],
         'SSHFP': ['algorithm', 'hash_type', 'value'],
@@ -1114,7 +1124,7 @@ def run_module():
                                'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SMIMEA', 'SOA', 'SRV', 'SSHFP',
                                'TLSA', 'TXT']),
             username=dict(type='str', required=True, aliases=['user']),
-            value=dict(type='str', required=False, aliases=['content']),
+            value=dict(type='str', required=False, aliases=['content'], default=''),
             weight=dict(type='int', required=False, default=1),
         ),
         supports_check_mode=True,
