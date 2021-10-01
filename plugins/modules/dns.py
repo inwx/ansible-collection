@@ -689,12 +689,38 @@ def build_record_caa(module):
     return ' '.join(map(str, values))
 
 
+def build_record_cert(module):
+    values = (module.params['cert_type'],
+              module.params['cert_key_tag'],
+              module.params['algorithm'],
+              module.params['value'])
+    return ' '.join(map(str, values))
+
+
+def build_record_key(module):
+    values = (module.params['key_flags'],
+              module.params['key_protocol'],
+              module.params['algorithm'],
+              module.params['value'])
+    return ' '.join(map(str, values))
+
+
 def build_record_naptr(module):
     values = (module.params['weight'],
               '"' + module.params['flag'] + '"',
               '"' + module.params['service'] + '"',
               module.params['regex'],
               module.params['substitution'])
+    return ' '.join(map(str, values))
+
+
+def build_record_openpgpkey(module):
+    return ''
+
+
+def build_record_smimea(module):
+    values = (
+    module.params['cert_usage'], module.params['selector'], module.params['matching_type'], module.params['value'])
     return ' '.join(map(str, values))
 
 
@@ -722,15 +748,20 @@ def build_record_content(module):
         'A': build_default_record,
         'AAAA': build_default_record,
         'AFSDB': build_record_afsdb,
+        'ALIAS': build_default_record,
         'CAA': build_record_caa,
+        'CERT': build_record_cert,
         'CNAME': build_default_record,
         'HINFO': build_default_record,
+        'KEY': build_record_key,
         'LOC': build_default_record,
         'MX': build_default_record,
         'NAPTR': build_record_naptr,
         'NS': build_default_record,
+        'OPENPGPKEY': build_default_record,
         'PTR': build_default_record,
         'RP': build_default_record,
+        'SMIMEA': build_record_smimea,
         'SOA': build_default_record,
         'SRV': build_record_srv,
         'SSHFP': build_record_sshfp,
@@ -742,7 +773,45 @@ def build_record_content(module):
 
 
 def get_record_fqdn(module):
-    if module.params['type'] == 'PTR':
+    if module.params['type'] == 'SMIMEA':
+        used_hash = str(module.params['hash'])
+        if re.match('^[a-fA-F0-9]$', used_hash):
+            if len(used_hash) < 56:
+                module.fail_json(msg='Supplied "hash" value is too short, must be at least 56 characters long. Given: '
+                                     + str(len(used_hash)) + ' characters.')
+            elif len(used_hash) > 56:
+                used_hash = used_hash[0:56]  # hash should only be 56 chars long.
+        else:
+            # Convenience Feature:
+            # If hash is not a hash try to manually calculate the hash.
+            if '@' in used_hash:
+                used_hash = used_hash.split('@')[0]
+            import hashlib
+            m = hashlib.sha256()
+            m.update(used_hash)
+            used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
+
+        record = used_hash + '._smimecert.'
+        fqdn = ''
+        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
+            fqdn = module.params['record'] + '.'
+        fqdn += module.params['domain']
+        return record + fqdn
+    elif module.params['type'] == 'OPENPGPKEY':
+        used_hash = module.params['hash']
+        if len(used_hash) < 56:
+            module.fail_json(msg='Supplied "hash" value is too short, must be at least 56 characters long. Given: '
+                                 + str(len(used_hash)) + ' characters.')
+        elif len(used_hash) > 56:
+            used_hash = used_hash[0:56]  # hash should only be 56 chars long.
+
+        record = used_hash + '._openpgpkey.'
+        fqdn = ''
+        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
+            fqdn = module.params['record'] + '.'
+        fqdn += module.params['domain']
+        return record + fqdn
+    elif module.params['type'] == 'PTR':
         if module.params['reversedns']:
             if sys.version_info.major == 3:
                 check_and_install_module(module, 'netaddr', 'python3-netaddr')
@@ -753,12 +822,12 @@ def get_record_fqdn(module):
             return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns, '.' + remove_suffix(module.params['domain'], '.') + '.')
         else:
             return remove_suffix(remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')), '.')
-
-    fqdn = ''
-    if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
-        fqdn = module.params['record'] + '.'
-    fqdn += module.params['domain']
-    return fqdn
+    else:
+        fqdn = ''
+        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
+            fqdn = module.params['record'] + '.'
+        fqdn += module.params['domain']
+        return fqdn
 
 
 def check_present_state_required_arguments(module):
@@ -766,15 +835,20 @@ def check_present_state_required_arguments(module):
         'A': ['value'],
         'AAAA': ['value'],
         'AFSDB': ['service', 'value'],
+        'ALIAS': ['value'],
         'CAA': ['flag', 'tag', 'value'],
+        'CERT': ['cert_type', 'cert_key_tag', 'algorithm', 'value'],
         'CNAME': ['value'],
         'HINFO': ['value'],
+        'KEY': ['key_flags', 'key_protocol', 'algorithm', 'value'],
         'LOC': ['value'],
         'MX': ['priority', 'value'],
         'NAPTR': ['flag', 'service', 'regex', 'substitution'],
         'NS': ['value'],
+        'OPENPGPKEY': ['hash'],
         'PTR': ['value'],
         'RP': ['value'],
+        'SMIMEA': ['cert_usage', 'selector', 'matching_type', 'value'],
         'SOA': ['value'],
         'SRV': ['priority', 'port', 'value'],
         'SSHFP': ['algorithm', 'hash_type', 'value'],
@@ -966,10 +1040,15 @@ def run_module():
             flag=dict(type='str', required=False),
             tag=dict(type='str', required=False, choices=['issue', 'issuewild', 'iodef']),
             cert_usage=dict(type='int', required=False, choices=[0, 1, 2, 3]),
+            cert_key_tag=dict(type='int', required=False),
+            cert_type=dict(type='int', required=False),
             domain=dict(type='str', required=True),
+            hash=dict(type='str', required=False),
             hash_type=dict(type='int', required=False),
+            key_flags=dict(type='int', required=False),
+            key_protocol=dict(type='int', required=False),
+            matching_type=dict('int', required=False, choices=[0, 1]),
             regex=dict(type='str', required=False),
-            api_env=dict(type='str', reduired=False, default='live', choices=['live', 'ote']),
             password=dict(type='str', required=True, aliases=['pass'], no_log=True),
             priority=dict(type='int', required=False, default=1),
             port=dict(type='int', required=False),
@@ -982,8 +1061,9 @@ def run_module():
             substitution=dict(type='str', required=False),
             ttl=dict(type='int', required=False, default=86400),
             type=dict(type='str', required=True,
-                      choices=['A', 'AAAA', 'AFSDB', 'CAA', 'CNAME', 'HINFO', 'LOC', 'MX',
-                               'NAPTR', 'NS', 'PTR', 'RP', 'SOA', 'SRV', 'SSHFP', 'TLSA', 'TXT']),
+                      choices=['A', 'AAAA', 'AFSDB', 'ALIAS', 'CAA', 'CERT', 'CNAME', 'HINFO', 'KEY', 'LOC', 'MX',
+                               'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SMIMEA', 'SOA', 'SRV', 'SSHFP',
+                               'TLSA', 'TXT']),
             username=dict(type='str', required=True, aliases=['user']),
             value=dict(type='str', required=False, aliases=['content']),
             weight=dict(type='int', required=False, default=1),
