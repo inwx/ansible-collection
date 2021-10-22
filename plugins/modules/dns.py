@@ -669,7 +669,6 @@ class ApiClient:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.common.respawn import probe_interpreters_for_module
 
 
 def remove_suffix(input_string, suffix):
@@ -936,13 +935,6 @@ def check_and_install_module(module, python_module_name, apt_module_name):
         pass
 
     if not import_successful:
-        interpreters = [sys.executable]
-        interpreter = probe_interpreters_for_module(interpreters, python_module_name)
-
-        if interpreter:
-            # Module was found in current version
-            return
-
         # don't make changes if we're in check_mode
         if module.check_mode:
             module.fail_json(msg="%s must be installed to use check mode. "
@@ -955,9 +947,6 @@ def check_and_install_module(module, python_module_name, apt_module_name):
         module.run_command(['apt-get', 'install', '--no-install-recommends', apt_module_name, '-y', '-q'],
                            check_rc=True)
 
-        # try again to find the bindings in common places
-        interpreter = probe_interpreters_for_module(interpreters, python_module_name)
-
         import_successful = False
         import importlib
         try:
@@ -966,7 +955,7 @@ def check_and_install_module(module, python_module_name, apt_module_name):
         except ImportError:
             pass
 
-        if not interpreter and import_successful:
+        if not import_successful:
             module.fail_json(msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
 
 
