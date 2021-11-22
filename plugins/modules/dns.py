@@ -997,7 +997,7 @@ def get_record_fqdn(module):
             m.update(used_hash)
             used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
 
-        record = used_hash + '._smimecert.'
+        record = used_hash + '._smimecert'
         if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
             record += '.' + module.params['record']
         return record + '.' + module.params['domain']
