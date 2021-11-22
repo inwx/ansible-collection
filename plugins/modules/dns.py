@@ -677,6 +677,7 @@ import hashlib
 import hmac
 import json
 import random
+import re
 import string
 import struct
 import sys
@@ -983,11 +984,8 @@ def build_record_content(module):
 def get_record_fqdn(module):
     if module.params['type'] == 'SMIMEA':
         used_hash = str(module.params['hash'])
-        if re.match('^[a-fA-F0-9]$', used_hash):
-            if len(used_hash) < 56:
-                module.fail_json(msg='Supplied "hash" value is too short, must be at least 56 characters long. Given: '
-                                     + str(len(used_hash)) + ' characters.')
-            elif len(used_hash) > 56:
+        if re.match('^[a-fA-F0-9]{56,64}$', used_hash):
+            if len(used_hash) > 56:
                 used_hash = used_hash[0:56]  # hash should only be 56 chars long.
         else:
             # Convenience Feature:
@@ -1005,11 +1003,8 @@ def get_record_fqdn(module):
         return record + '.' + module.params['domain']
     elif module.params['type'] == 'OPENPGPKEY':
         used_hash = str(module.params['hash'])
-        if re.match('^[a-fA-F0-9]$', used_hash):
-            if len(used_hash) < 56:
-                module.fail_json(msg='Supplied "hash" value is too short, must be at least 56 characters long. Given: '
-                                     + str(len(used_hash)) + ' characters.')
-            elif len(used_hash) > 56:
+        if re.match('^[a-fA-F0-9]{56,64}$', used_hash):
+            if len(used_hash) > 56:
                 used_hash = used_hash[0:56]  # hash should only be 56 chars long.
         else:
             # Convenience Feature:
