@@ -31,6 +31,9 @@ options:
     algorithm:
         description:
             - Algorithm number.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.2
+            - Required for C(type=CERT) when C(state=present).
+            - Required for C(type=KEY) when C(state=present).
             - Required for C(type=SSHFP) when C(state=present).
         type: int
         required: false
@@ -41,6 +44,33 @@ options:
         choices: [ live, ote ]
         default: 'live'
         required: false
+    cert_usage:
+        description:
+            - Certificate usage number.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.1
+            - Required for C(type=TLSA) when C(state=present).
+        type: int
+        choices: [ 0, 1, 2, 3 ]
+        required: false
+    cert_key_tag:
+        description:
+            - 16 bit value computed for the key embedded in the certificate as specified in the DNSSEC Standard [RFC 2535].
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-4.1.6
+            - Required for C(type=CERT) when C(state=present).
+        type: int
+        required: false
+    cert_type:
+        description:
+            - Certificate Type.
+            - https://datatracker.ietf.org/doc/html/rfc2538.html#section-2.1
+            - Required for C(type=CERT) when C(state=present).
+        type: int
+        required: false
+    domain:
+        description:
+            - The name of the Domain to work with (e.g. "example.com").
+        type: str
+        required: true
     flag:
         description:
             - Flag for C(type=CAA) record defining if record is critical.
@@ -48,38 +78,40 @@ options:
             - Required for C(type=CAA) and C(type=NAPTR) when C(state=present).
         type: str
         required: false
-    tag:
+    hash:
         description:
-            - Tag identifier.
-            - An ASCII string that defines the identifier of the property represented by the record.
-            - Required for C(type=CAA) when C(state=present).
-        type: str
-        choices: [ issue, issuewild, iodef ]
-        required: false
-    cert_usage:
-        description:
-            - Certificate usage number.
-            - Required for C(type=TLSA) when C(state=present).
-        type: int
-        choices: [ 0, 1, 2, 3 ]
-        required: false
-    domain:
-        description:
-            - The name of the Domain to work with (e.g. "example.com").
-        type: str
-        required: true
+            - A hash (ex. SHA-256) in hex digits.
+            - Must be at least 56 digits long.
+            - Can be an email name for C(type=SMIMEA)
+            - Required for C(type=OPENPGPKEY) when C(state=present)
+            - Required for C(type=SMIMEA) when C(state=present)
     hash_type:
         description:
             - Hash type number.
             - Required for C(type=SSHFP) and C(type=TLSA) when C(state=present).
         type: int
         required: false
-    regex:
+    key_flags:
         description:
-            - Regex string.
-            - Defines what should be replaced with the defined C(substitution).
-            - Required for C(type=NAPTR) when C(state=present).
-        type: str
+            - Key Flags Field.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.1.2
+            - Required for C(type=KEY) when C(state=present).
+        type: int
+        required: false
+    key_protocol:
+        description:
+            - Protocol Octet.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.1.3
+            - Required for C(type=KEY) when C(state=present).
+        type: int
+        required: false
+    matching_type:
+        description:
+            - Certificate Matching Type.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.3
+            - Required for C(type=SMIMEA) when C(state=present).
+        type: int
+        choices: [ 0, 1 ]
         required: false
     password:
         description:
@@ -109,6 +141,13 @@ options:
         required: false
         default: ''
         aliases: [ name ]
+    regex:
+        description:
+            - Regex string.
+            - Defines what should be replaced with the defined C(substitution).
+            - Required for C(type=NAPTR) when C(state=present).
+        type: str
+        required: false
     reversedns:
         description:
             - Whether the record (an IP) should be converted to a reverse dns value.
@@ -119,7 +158,9 @@ options:
     selector:
         description:
             - Selector number.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.2
             - Required for C(type=TLSA) when C(state=present).
+            - Required for C(type=SMIMEA) when C(state=present).
         type: int
         required: false
         choices: [ 0, 1 ]
@@ -151,6 +192,14 @@ options:
             - Required for C(type=NAPTR) when C(state=present).
         type: str
         required: false
+    tag:
+        description:
+            - Tag identifier.
+            - An ASCII string that defines the identifier of the property represented by the record.
+            - Required for C(type=CAA) when C(state=present).
+        type: str
+        choices: [ issue, issuewild, iodef ]
+        required: false
     ttl:
         description:
             - The TTL to give the new record.
@@ -163,7 +212,7 @@ options:
             - The type of DNS record.
         type: str
         required: false
-        choices: [ A, AAAA, AFSDB, CAA, CNAME, HINFO, LOC, MX, NAPTR, NS, PTR, RP, SOA, SRV, SSHFP, TLSA, TXT ]
+        choices: [ A, AAAA, AFSDB, ALIAS, CAA, CERT, CNAME, HINFO, KEY, LOC, MX, NAPTR, NS, OPENPGPKEY, PTR, RP, SMIMEA, SOA, SRV, SSHFP, TLSA, TXT, URI ]
     username:
         description:
             - INWX Account Username
@@ -197,7 +246,7 @@ EXAMPLES = '''
     username: test_user
     password: test_password
 
-- name: Create an A record in the ote environemnt
+- name: Create an A record in the ote environment
   inwx.collection.dns:
     domain: example.com
     type: A
@@ -261,12 +310,12 @@ EXAMPLES = '''
     username: test_user
     password: test_password
 
-- name: Create a mail.example.com CNAME record
+- name: Create an example.com ALIAS record
   inwx.collection.dns:
     domain: example.com
-    type: CNAME
-    record: mail
-    value: example.com
+    type: ALIAS
+    record: ''
+    value: example.org
     username: test_user
     password: test_password
 
@@ -281,12 +330,55 @@ EXAMPLES = '''
     username: test_user
     password: test_password
 
+- name: Create a example.com CERT record
+  inwx.collection.dns:
+    domain: example.com
+    type: CERT
+    record: test
+    cert_type: 2
+    cert_key_tag: 77
+    algorithm: 2
+    value: 'TUlJQ1l6Q0NBY3lnQXdJQkFnSUJBREFOQmdrcWh'
+    username: test_user
+    password: test_password
+
+- name: Create a mail.example.com CNAME record
+  inwx.collection.dns:
+    domain: example.com
+    type: CNAME
+    record: mail
+    value: example.com
+    username: test_user
+    password: test_password
+
 - name: Create a test.example.com HINFO record
   inwx.collection.dns:
     domain: example.com
     type: HINFO
     record: test
     value: 'INTEL-IPSC UNIX'
+    username: test_user
+    password: test_password
+
+- name: Create a test.example.com KEY record
+  inwx.collection.dns:
+    domain: example.com
+    type: KEY
+    record: test
+    key_flags: 256
+    key_protocol: 3
+    algorithm:  3
+    value: |
+       BOPdJjdc/ZQWCVA/ONz6LjvugMnB2KKL3F1D2i9Gdrpi
+       rcWRKS2DfRn5KiMM2HQXBHv0ZdkFs/tmjg7rYxrN+bzB
+       NrlwfU5RMjioi67PthD07EHbZjwoZ5sKC2BZ/M596hyg
+       fx5JAvbIWBQVF+ztiuCnWCkbGvVXwsmE+odINCur+o+E
+       jA9hF06LqTviUJKqTxisQO5OHM/0ufNenzIbijJPTXbU
+       cF3vW+CMlX+AUPLSag7YnhWaEu7BLCKfg3vJVw9mtaN2
+       W3oWPRdebGUf/QfyVKXoWD6zDLByCZh4wKvpcwgAsel4
+       bO5LVe7s8qstSxqrwzmvaZ5XYOMZFbN7CXtutiswAkb0
+       pkehIYime6IRkDwWDG+14H5yriRuCDK3m7GvwxMo+ggV
+       0k3Po9LD5wWSIi1N ) ; key id = 22004
     username: test_user
     password: test_password
 
@@ -332,6 +424,54 @@ EXAMPLES = '''
     username: test_user
     password: test_password
 
+- name: Create a example.com OPENPGPKEY record
+  inwx.collection.dns:
+    domain: example.com
+    type: OPENPGPKEY
+    hash: '7f0b629cbb9d794b3daf19fcd686a30a039b47395545394dadc05747'
+    value: |
+        mQGiBGFW68wRBACRhxAjR9Ar0bKETL0S38Tt1TxBYcl4X2A4hNXoq7AKivrEhg1G
+        P0T5Y9e2vevOKkP/PClKKSPpvTfHB4J5vtromHq7e+e5CDsqDxnmeaMG4SCyeXVr
+        JzZ41laQCeQEQSVZr/hNxHyBt9+fdBSuUN4WpftD92R6Hs1wDNTHwJwSTwCgxipp
+        kIziajC9St7gkOt2O63vtBUD/AghlnpCi2heEw4r7q8zpOHIZrG1ItTjFkoCP0F6
+        LwjK1i6fVEuTpyZ828mSjmv+GJhcQUtK2t286NB9X6yhX4UrRTMKvF4K0eLMYRqF
+        YA2l+JFxYa0zUBKoV1NYgx7r73+qFER76s96e/1mP4lWzI0Vu2N6sgEFuPkAdQZn
+        eKRMA/9G5L7eksnjmZVMFNQZdYALRyUvm4Ugn3rQMqc8fa/ABZIELmvpH2UEIdo4
+        lGEQhPGR/f/RZWK4YSLVQ2H8mqUUPlmXCofLNO5Zwhew3oSlr6Q8BuaxCwJtNuJN
+        4woOd3EloTE4VYcJh61EiTt73QbhjOXmKIaSoss0RvkFY/kms7Qbbmlja3VmZXIg
+        PG5pY2tAZXhhbXBsZS5jb20+iHkEExEKADkWIQRURPeTsAMS+m8TFyFCPDD5kjYX
+        BAUCYVbrzAIbAwYLCQgHCgMFFQoJCAsFFgIDAQACHgECF4AACgkQQjww+ZI2FwRW
+        QwCgtTb1zj7mO3Riw4cnMkGBPMLZChQAn0tpNWn6/uZ2EFwhtj+ABfc6a2UB
+        =i4gG
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a example.com OPENPGPKEY record example2
+  inwx.collection.dns:
+    domain: example.com
+    type: OPENPGPKEY
+    hash: 'nick@example.com'
+    value: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+        mQGiBGFW68wRBACRhxAjR9Ar0bKETL0S38Tt1TxBYcl4X2A4hNXoq7AKivrEhg1G
+        P0T5Y9e2vevOKkP/PClKKSPpvTfHB4J5vtromHq7e+e5CDsqDxnmeaMG4SCyeXVr
+        JzZ41laQCeQEQSVZr/hNxHyBt9+fdBSuUN4WpftD92R6Hs1wDNTHwJwSTwCgxipp
+        kIziajC9St7gkOt2O63vtBUD/AghlnpCi2heEw4r7q8zpOHIZrG1ItTjFkoCP0F6
+        LwjK1i6fVEuTpyZ828mSjmv+GJhcQUtK2t286NB9X6yhX4UrRTMKvF4K0eLMYRqF
+        YA2l+JFxYa0zUBKoV1NYgx7r73+qFER76s96e/1mP4lWzI0Vu2N6sgEFuPkAdQZn
+        eKRMA/9G5L7eksnjmZVMFNQZdYALRyUvm4Ugn3rQMqc8fa/ABZIELmvpH2UEIdo4
+        lGEQhPGR/f/RZWK4YSLVQ2H8mqUUPlmXCofLNO5Zwhew3oSlr6Q8BuaxCwJtNuJN
+        4woOd3EloTE4VYcJh61EiTt73QbhjOXmKIaSoss0RvkFY/kms7Qbbmlja3VmZXIg
+        PG5pY2tAZXhhbXBsZS5jb20+iHkEExEKADkWIQRURPeTsAMS+m8TFyFCPDD5kjYX
+        BAUCYVbrzAIbAwYLCQgHCgMFFQoJCAsFFgIDAQACHgECF4AACgkQQjww+ZI2FwRW
+        QwCgtTb1zj7mO3Riw4cnMkGBPMLZChQAn0tpNWn6/uZ2EFwhtj+ABfc6a2UB
+        =i4gG
+        -----END PGP PUBLIC KEY BLOCK-----
+    ttl: 86400
+    username: test_user
+    password: test_password
+
 - name: Create a server-1.example.com PTR record. With only host part as record
   inwx.collection.dns:
     domain: '8.b.d.0.1.0.0.2.ip6.arpa'
@@ -369,6 +509,48 @@ EXAMPLES = '''
     type: RP
     record: ''
     value: mail@example.com
+    username: test_user
+    password: test_password
+    
+- name: Create a example.com RP record
+  inwx.collection.dns:
+    domain: example.com
+    type: SMIMEA
+    hash: '7f0b629cbb9d794b3daf19fcd686a30a039b47395545394dadc05747'
+    cert_usage: 0
+    selector: 0
+    matching_type: 1
+    value: |
+        MIIBbzCCARSgAwIBAgIUOLyf9DRFyxkfKV0WsdszKhX2AY4wCgYIKoZIzj0EAwIw
+        FTETMBEGA1UEAxMKRXhhbXBsZSBDQTAeFw0yMTEwMDExMTEyMDBaFw0yNjA5MzAx
+        MTEyMDBaMBUxEzARBgNVBAMTCkV4YW1wbGUgQ0EwWTATBgcqhkjOPQIBBggqhkjO
+        PQMBBwNCAARfetQDkndbSLk+U/ns3KvXbF1gR5v3PU4lcEbqoecruRe8sYsKjVn3
+        QD9E4t/BEvrDUyrg2TDSpFANQAj7Mcb2o0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYD
+        VR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUnUowQBs6dHHU/qjboPoY+ei0lCIwCgYI
+        KoZIzj0EAwIDSQAwRgIhALnkf8yVB24TaUxCLvvSGwtOUrBwOzzffRbfJ5g5Hr6s
+        AiEA/qkGwyRr2E/VpuVjzxJTpL1nMaqk8j30/k7K6dtihVU=
+    username: test_user
+    password: test_password
+    
+- name: Create a example.com RP record
+  inwx.collection.dns:
+    domain: example.com
+    type: SMIMEA
+    hash: nick@example.com
+    cert_usage: 0
+    selector: 0
+    matching_type: 1
+    value: |
+        -----BEGIN CERTIFICATE-----
+        MIIBbzCCARSgAwIBAgIUOLyf9DRFyxkfKV0WsdszKhX2AY4wCgYIKoZIzj0EAwIw
+        FTETMBEGA1UEAxMKRXhhbXBsZSBDQTAeFw0yMTEwMDExMTEyMDBaFw0yNjA5MzAx
+        MTEyMDBaMBUxEzARBgNVBAMTCkV4YW1wbGUgQ0EwWTATBgcqhkjOPQIBBggqhkjO
+        PQMBBwNCAARfetQDkndbSLk+U/ns3KvXbF1gR5v3PU4lcEbqoecruRe8sYsKjVn3
+        QD9E4t/BEvrDUyrg2TDSpFANQAj7Mcb2o0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYD
+        VR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUnUowQBs6dHHU/qjboPoY+ei0lCIwCgYI
+        KoZIzj0EAwIDSQAwRgIhALnkf8yVB24TaUxCLvvSGwtOUrBwOzzffRbfJ5g5Hr6s
+        AiEA/qkGwyRr2E/VpuVjzxJTpL1nMaqk8j30/k7K6dtihVU=
+        -----END CERTIFICATE-----
     username: test_user
     password: test_password
 
@@ -423,6 +605,17 @@ EXAMPLES = '''
     type: TXT
     record: test
     value: 'hello world'
+    username: test_user
+    password: test_password
+
+- name: Create a test.example.com URI record
+  inwx.collection.dns:
+    domain: example.com
+    type: URI
+    record: '_ftp._tcp'
+    priority: 10
+    weight: 1
+    value: 'ftp://ftp.example.com/public'
     username: test_user
     password: test_password
 
@@ -484,6 +677,7 @@ import hashlib
 import hmac
 import json
 import random
+import re
 import string
 import struct
 import sys
@@ -689,12 +883,47 @@ def build_record_caa(module):
     return ' '.join(map(str, values))
 
 
+def build_record_cert(module):
+    values = (module.params['cert_type'],
+              module.params['cert_key_tag'],
+              module.params['algorithm'],
+              module.params['value'])
+    return ' '.join(map(str, values))
+
+
+def build_record_key(module):
+    values = (module.params['key_flags'],
+              module.params['key_protocol'],
+              module.params['algorithm'],
+              re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value']))
+    return ' '.join(map(str, values))
+
+
 def build_record_naptr(module):
     values = (module.params['weight'],
               '"' + module.params['flag'] + '"',
               '"' + module.params['service'] + '"',
               module.params['regex'],
               module.params['substitution'])
+    return ' '.join(map(str, values))
+
+
+def build_record_openpgpkey(module):
+    trimmed = re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value'])
+    # Removing checksum from end of key
+    if len(trimmed) < 5:
+        module.fail_json(msg='Supplied "value" value is too short.')
+    if trimmed[-5] == "=":
+        trimmed = remove_suffix(trimmed, trimmed[-5:])
+    return trimmed
+
+
+def build_record_smimea(module):
+    values = (
+        module.params['cert_usage'],
+        module.params['selector'],
+        module.params['matching_type'],
+        re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value']))
     return ' '.join(map(str, values))
 
 
@@ -713,6 +942,10 @@ def build_record_tlsa(module):
     return ' '.join(map(lambda key: str(module.params[key]), keys))
 
 
+def build_record_uri(module):
+    return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + module.params['value'] + '"'
+
+
 def build_default_record(module):
     return module.params['value']
 
@@ -722,27 +955,71 @@ def build_record_content(module):
         'A': build_default_record,
         'AAAA': build_default_record,
         'AFSDB': build_record_afsdb,
+        'ALIAS': build_default_record,
         'CAA': build_record_caa,
+        'CERT': build_record_cert,
         'CNAME': build_default_record,
         'HINFO': build_default_record,
+        'KEY': build_record_key,
         'LOC': build_default_record,
         'MX': build_default_record,
         'NAPTR': build_record_naptr,
         'NS': build_default_record,
+        'OPENPGPKEY': build_record_openpgpkey,
         'PTR': build_default_record,
         'RP': build_default_record,
+        'SMIMEA': build_record_smimea,
         'SOA': build_default_record,
         'SRV': build_record_srv,
         'SSHFP': build_record_sshfp,
         'TLSA': build_record_tlsa,
-        'TXT': build_default_record
+        'TXT': build_default_record,
+        'URI': build_record_uri,
     }
 
     return switcher.get(str(module.params['type']).upper())(module)
 
 
 def get_record_fqdn(module):
-    if module.params['type'] == 'PTR':
+    if module.params['type'] == 'SMIMEA':
+        used_hash = str(module.params['hash'])
+        if re.match('^[a-fA-F0-9]{56,64}$', used_hash):
+            if len(used_hash) > 56:
+                used_hash = used_hash[0:56]  # hash should only be 56 chars long.
+        else:
+            # Convenience Feature:
+            # If hash is not a hash try to manually calculate the hash.
+            if '@' in used_hash:
+                used_hash = used_hash.split('@')[0]
+            import hashlib
+            m = hashlib.sha256()
+            m.update(used_hash)
+            used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
+
+        record = used_hash + '._smimecert'
+        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
+            record += '.' + module.params['record']
+        return record + '.' + module.params['domain']
+    elif module.params['type'] == 'OPENPGPKEY':
+        used_hash = str(module.params['hash'])
+        if re.match('^[a-fA-F0-9]{56,64}$', used_hash):
+            if len(used_hash) > 56:
+                used_hash = used_hash[0:56]  # hash should only be 56 chars long.
+        else:
+            # Convenience Feature:
+            # If hash is not a hash try to manually calculate the hash.
+            if '@' in used_hash:
+                used_hash = used_hash.split('@')[0]
+            import hashlib
+            m = hashlib.sha256()
+            m.update(used_hash)
+            used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
+
+        record = used_hash + '._openpgpkey'
+        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
+            record += '.' + module.params['record']
+        return record + '.' + module.params['domain']
+    elif module.params['type'] == 'PTR':
         if module.params['reversedns']:
             if sys.version_info.major == 3:
                 check_and_install_module(module, 'netaddr', 'python3-netaddr')
@@ -750,15 +1027,18 @@ def get_record_fqdn(module):
                 check_and_install_module(module, 'netaddr', 'python-netaddr')
             import netaddr
 
-            return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns, '.' + remove_suffix(module.params['domain'], '.') + '.')
+            return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns,
+                                 '.' + remove_suffix(module.params['domain'], '.') + '.')
         else:
-            return remove_suffix(remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')), '.')
-
-    fqdn = ''
-    if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
-        fqdn = module.params['record'] + '.'
-    fqdn += module.params['domain']
-    return fqdn
+            return remove_suffix(
+                remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')),
+                '.')
+    else:
+        fqdn = ''
+        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
+            fqdn = module.params['record'] + '.'
+        fqdn += module.params['domain']
+        return fqdn
 
 
 def check_present_state_required_arguments(module):
@@ -766,20 +1046,26 @@ def check_present_state_required_arguments(module):
         'A': ['value'],
         'AAAA': ['value'],
         'AFSDB': ['service', 'value'],
+        'ALIAS': ['value'],
         'CAA': ['flag', 'tag', 'value'],
+        'CERT': ['cert_type', 'cert_key_tag', 'algorithm', 'value'],
         'CNAME': ['value'],
         'HINFO': ['value'],
+        'KEY': ['key_flags', 'key_protocol', 'algorithm', 'value'],
         'LOC': ['value'],
         'MX': ['priority', 'value'],
         'NAPTR': ['flag', 'service', 'regex', 'substitution'],
         'NS': ['value'],
+        'OPENPGPKEY': ['hash', 'value'],
         'PTR': ['value'],
         'RP': ['value'],
+        'SMIMEA': ['cert_usage', 'hash', 'selector', 'matching_type', 'value'],
         'SOA': ['value'],
         'SRV': ['priority', 'port', 'value'],
         'SSHFP': ['algorithm', 'hash_type', 'value'],
         'TLSA': ['cert_usage', 'selector', 'hash_type', 'value'],
-        'TXT': ['value']
+        'TXT': ['value'],
+        'URI': ['priority', 'weight', 'value']
     }
 
     unsatisfied_params = required_params_for_type[module.params['type']]
@@ -963,13 +1249,19 @@ def run_module():
     module = AnsibleModule(
         argument_spec=dict(
             algorithm=dict(type='int', required=False),
+            api_env=dict(type='str', reduired=False, default='live', choices=['live', 'ote']),
             flag=dict(type='str', required=False),
             tag=dict(type='str', required=False, choices=['issue', 'issuewild', 'iodef']),
             cert_usage=dict(type='int', required=False, choices=[0, 1, 2, 3]),
+            cert_key_tag=dict(type='int', required=False),
+            cert_type=dict(type='int', required=False),
             domain=dict(type='str', required=True),
+            hash=dict(type='str', required=False),
             hash_type=dict(type='int', required=False),
+            key_flags=dict(type='int', required=False),
+            key_protocol=dict(type='int', required=False),
+            matching_type=dict(type='int', required=False, choices=[0, 1]),
             regex=dict(type='str', required=False),
-            api_env=dict(type='str', reduired=False, default='live', choices=['live', 'ote']),
             password=dict(type='str', required=True, aliases=['pass'], no_log=True),
             priority=dict(type='int', required=False, default=1),
             port=dict(type='int', required=False),
@@ -982,10 +1274,11 @@ def run_module():
             substitution=dict(type='str', required=False),
             ttl=dict(type='int', required=False, default=86400),
             type=dict(type='str', required=True,
-                      choices=['A', 'AAAA', 'AFSDB', 'CAA', 'CNAME', 'HINFO', 'LOC', 'MX',
-                               'NAPTR', 'NS', 'PTR', 'RP', 'SOA', 'SRV', 'SSHFP', 'TLSA', 'TXT']),
+                      choices=['A', 'AAAA', 'AFSDB', 'ALIAS', 'CAA', 'CERT', 'CNAME', 'HINFO', 'KEY', 'LOC', 'MX',
+                               'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SMIMEA', 'SOA', 'SRV', 'SSHFP',
+                               'TLSA', 'TXT', 'URI']),
             username=dict(type='str', required=True, aliases=['user']),
-            value=dict(type='str', required=False, aliases=['content']),
+            value=dict(type='str', required=False, aliases=['content'], default=''),
             weight=dict(type='int', required=False, default=1),
         ),
         supports_check_mode=True,

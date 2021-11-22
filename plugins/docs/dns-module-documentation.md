@@ -6,7 +6,7 @@ Module for managing dns records via the api.
 
 * Python 2.7+
 * Python `requests` module
-
+* Python `netaddr` module (when dealing with PTR records)
 ## Examples
 
 ### Playbooks
@@ -25,7 +25,7 @@ Module for managing dns records via the api.
     username: test_user
     password: test_password
 
-- name: Create an A record in the ote environemnt
+- name: Create an A record in the ote environment
   inwx.collection.dns:
     domain: example.com
     type: A
@@ -89,12 +89,12 @@ Module for managing dns records via the api.
     username: test_user
     password: test_password
 
-- name: Create a mail.example.com CNAME record
+- name: Create an example.com ALIAS record
   inwx.collection.dns:
     domain: example.com
-    type: CNAME
-    record: mail
-    value: example.com
+    type: ALIAS
+    record: ''
+    value: example.org
     username: test_user
     password: test_password
 
@@ -109,12 +109,55 @@ Module for managing dns records via the api.
     username: test_user
     password: test_password
 
+- name: Create a example.com CERT record
+  inwx.collection.dns:
+    domain: example.com
+    type: CERT
+    record: test
+    cert_type: 2
+    cert_key_tag: 77
+    algorithm: 2
+    value: 'TUlJQ1l6Q0NBY3lnQXdJQkFnSUJBREFOQmdrcWh'
+    username: test_user
+    password: test_password
+
+- name: Create a mail.example.com CNAME record
+  inwx.collection.dns:
+    domain: example.com
+    type: CNAME
+    record: mail
+    value: example.com
+    username: test_user
+    password: test_password
+
 - name: Create a test.example.com HINFO record
   inwx.collection.dns:
     domain: example.com
     type: HINFO
     record: test
     value: 'INTEL-IPSC UNIX'
+    username: test_user
+    password: test_password
+
+- name: Create a test.example.com KEY record
+  inwx.collection.dns:
+    domain: example.com
+    type: KEY
+    record: test
+    key_flags: 256
+    key_protocol: 3
+    algorithm:  3
+    value: |
+       BOPdJjdc/ZQWCVA/ONz6LjvugMnB2KKL3F1D2i9Gdrpi
+       rcWRKS2DfRn5KiMM2HQXBHv0ZdkFs/tmjg7rYxrN+bzB
+       NrlwfU5RMjioi67PthD07EHbZjwoZ5sKC2BZ/M596hyg
+       fx5JAvbIWBQVF+ztiuCnWCkbGvVXwsmE+odINCur+o+E
+       jA9hF06LqTviUJKqTxisQO5OHM/0ufNenzIbijJPTXbU
+       cF3vW+CMlX+AUPLSag7YnhWaEu7BLCKfg3vJVw9mtaN2
+       W3oWPRdebGUf/QfyVKXoWD6zDLByCZh4wKvpcwgAsel4
+       bO5LVe7s8qstSxqrwzmvaZ5XYOMZFbN7CXtutiswAkb0
+       pkehIYime6IRkDwWDG+14H5yriRuCDK3m7GvwxMo+ggV
+       0k3Po9LD5wWSIi1N ) ; key id = 22004
     username: test_user
     password: test_password
 
@@ -160,6 +203,54 @@ Module for managing dns records via the api.
     username: test_user
     password: test_password
 
+- name: Create a example.com OPENPGPKEY record
+  inwx.collection.dns:
+    domain: example.com
+    type: OPENPGPKEY
+    hash: '7f0b629cbb9d794b3daf19fcd686a30a039b47395545394dadc05747'
+    value: |
+        mQGiBGFW68wRBACRhxAjR9Ar0bKETL0S38Tt1TxBYcl4X2A4hNXoq7AKivrEhg1G
+        P0T5Y9e2vevOKkP/PClKKSPpvTfHB4J5vtromHq7e+e5CDsqDxnmeaMG4SCyeXVr
+        JzZ41laQCeQEQSVZr/hNxHyBt9+fdBSuUN4WpftD92R6Hs1wDNTHwJwSTwCgxipp
+        kIziajC9St7gkOt2O63vtBUD/AghlnpCi2heEw4r7q8zpOHIZrG1ItTjFkoCP0F6
+        LwjK1i6fVEuTpyZ828mSjmv+GJhcQUtK2t286NB9X6yhX4UrRTMKvF4K0eLMYRqF
+        YA2l+JFxYa0zUBKoV1NYgx7r73+qFER76s96e/1mP4lWzI0Vu2N6sgEFuPkAdQZn
+        eKRMA/9G5L7eksnjmZVMFNQZdYALRyUvm4Ugn3rQMqc8fa/ABZIELmvpH2UEIdo4
+        lGEQhPGR/f/RZWK4YSLVQ2H8mqUUPlmXCofLNO5Zwhew3oSlr6Q8BuaxCwJtNuJN
+        4woOd3EloTE4VYcJh61EiTt73QbhjOXmKIaSoss0RvkFY/kms7Qbbmlja3VmZXIg
+        PG5pY2tAZXhhbXBsZS5jb20+iHkEExEKADkWIQRURPeTsAMS+m8TFyFCPDD5kjYX
+        BAUCYVbrzAIbAwYLCQgHCgMFFQoJCAsFFgIDAQACHgECF4AACgkQQjww+ZI2FwRW
+        QwCgtTb1zj7mO3Riw4cnMkGBPMLZChQAn0tpNWn6/uZ2EFwhtj+ABfc6a2UB
+        =i4gG
+    ttl: 86400
+    username: test_user
+    password: test_password
+
+- name: Create a example.com OPENPGPKEY record example2
+  inwx.collection.dns:
+    domain: example.com
+    type: OPENPGPKEY
+    hash: 'nick@example.com'
+    value: |
+        -----BEGIN PGP PUBLIC KEY BLOCK-----
+        mQGiBGFW68wRBACRhxAjR9Ar0bKETL0S38Tt1TxBYcl4X2A4hNXoq7AKivrEhg1G
+        P0T5Y9e2vevOKkP/PClKKSPpvTfHB4J5vtromHq7e+e5CDsqDxnmeaMG4SCyeXVr
+        JzZ41laQCeQEQSVZr/hNxHyBt9+fdBSuUN4WpftD92R6Hs1wDNTHwJwSTwCgxipp
+        kIziajC9St7gkOt2O63vtBUD/AghlnpCi2heEw4r7q8zpOHIZrG1ItTjFkoCP0F6
+        LwjK1i6fVEuTpyZ828mSjmv+GJhcQUtK2t286NB9X6yhX4UrRTMKvF4K0eLMYRqF
+        YA2l+JFxYa0zUBKoV1NYgx7r73+qFER76s96e/1mP4lWzI0Vu2N6sgEFuPkAdQZn
+        eKRMA/9G5L7eksnjmZVMFNQZdYALRyUvm4Ugn3rQMqc8fa/ABZIELmvpH2UEIdo4
+        lGEQhPGR/f/RZWK4YSLVQ2H8mqUUPlmXCofLNO5Zwhew3oSlr6Q8BuaxCwJtNuJN
+        4woOd3EloTE4VYcJh61EiTt73QbhjOXmKIaSoss0RvkFY/kms7Qbbmlja3VmZXIg
+        PG5pY2tAZXhhbXBsZS5jb20+iHkEExEKADkWIQRURPeTsAMS+m8TFyFCPDD5kjYX
+        BAUCYVbrzAIbAwYLCQgHCgMFFQoJCAsFFgIDAQACHgECF4AACgkQQjww+ZI2FwRW
+        QwCgtTb1zj7mO3Riw4cnMkGBPMLZChQAn0tpNWn6/uZ2EFwhtj+ABfc6a2UB
+        =i4gG
+        -----END PGP PUBLIC KEY BLOCK-----
+    ttl: 86400
+    username: test_user
+    password: test_password
+
 - name: Create a server-1.example.com PTR record. With only host part as record
   inwx.collection.dns:
     domain: '8.b.d.0.1.0.0.2.ip6.arpa'
@@ -197,6 +288,48 @@ Module for managing dns records via the api.
     type: RP
     record: ''
     value: mail@example.com
+    username: test_user
+    password: test_password
+    
+- name: Create a example.com RP record
+  inwx.collection.dns:
+    domain: example.com
+    type: SMIMEA
+    hash: '7f0b629cbb9d794b3daf19fcd686a30a039b47395545394dadc05747'
+    cert_usage: 0
+    selector: 0
+    matching_type: 1
+    value: |
+        MIIBbzCCARSgAwIBAgIUOLyf9DRFyxkfKV0WsdszKhX2AY4wCgYIKoZIzj0EAwIw
+        FTETMBEGA1UEAxMKRXhhbXBsZSBDQTAeFw0yMTEwMDExMTEyMDBaFw0yNjA5MzAx
+        MTEyMDBaMBUxEzARBgNVBAMTCkV4YW1wbGUgQ0EwWTATBgcqhkjOPQIBBggqhkjO
+        PQMBBwNCAARfetQDkndbSLk+U/ns3KvXbF1gR5v3PU4lcEbqoecruRe8sYsKjVn3
+        QD9E4t/BEvrDUyrg2TDSpFANQAj7Mcb2o0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYD
+        VR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUnUowQBs6dHHU/qjboPoY+ei0lCIwCgYI
+        KoZIzj0EAwIDSQAwRgIhALnkf8yVB24TaUxCLvvSGwtOUrBwOzzffRbfJ5g5Hr6s
+        AiEA/qkGwyRr2E/VpuVjzxJTpL1nMaqk8j30/k7K6dtihVU=
+    username: test_user
+    password: test_password
+    
+- name: Create a example.com RP record
+  inwx.collection.dns:
+    domain: example.com
+    type: SMIMEA
+    hash: nick@example.com
+    cert_usage: 0
+    selector: 0
+    matching_type: 1
+    value: |
+        -----BEGIN CERTIFICATE-----
+        MIIBbzCCARSgAwIBAgIUOLyf9DRFyxkfKV0WsdszKhX2AY4wCgYIKoZIzj0EAwIw
+        FTETMBEGA1UEAxMKRXhhbXBsZSBDQTAeFw0yMTEwMDExMTEyMDBaFw0yNjA5MzAx
+        MTEyMDBaMBUxEzARBgNVBAMTCkV4YW1wbGUgQ0EwWTATBgcqhkjOPQIBBggqhkjO
+        PQMBBwNCAARfetQDkndbSLk+U/ns3KvXbF1gR5v3PU4lcEbqoecruRe8sYsKjVn3
+        QD9E4t/BEvrDUyrg2TDSpFANQAj7Mcb2o0IwQDAOBgNVHQ8BAf8EBAMCAQYwDwYD
+        VR0TAQH/BAUwAwEB/zAdBgNVHQ4EFgQUnUowQBs6dHHU/qjboPoY+ei0lCIwCgYI
+        KoZIzj0EAwIDSQAwRgIhALnkf8yVB24TaUxCLvvSGwtOUrBwOzzffRbfJ5g5Hr6s
+        AiEA/qkGwyRr2E/VpuVjzxJTpL1nMaqk8j30/k7K6dtihVU=
+        -----END CERTIFICATE-----
     username: test_user
     password: test_password
 
@@ -254,6 +387,17 @@ Module for managing dns records via the api.
     username: test_user
     password: test_password
 
+- name: Create a test.example.com URI record
+  inwx.collection.dns:
+    domain: example.com
+    type: URI
+    record: '_ftp._tcp'
+    priority: 10
+    weight: 1
+    value: 'ftp://ftp.example.com/public'
+    username: test_user
+    password: test_password
+
 - name: Ensure that there is only one A record for test.example.com
   inwx.collection.dns:
     domain: example.com
@@ -272,6 +416,9 @@ options:
     algorithm:
         description:
             - Algorithm number.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.2
+            - Required for C(type=CERT) when C(state=present).
+            - Required for C(type=KEY) when C(state=present).
             - Required for C(type=SSHFP) when C(state=present).
         type: int
         required: false
@@ -282,6 +429,33 @@ options:
         choices: [ live, ote ]
         default: 'live'
         required: false
+    cert_usage:
+        description:
+            - Certificate usage number.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.1
+            - Required for C(type=TLSA) when C(state=present).
+        type: int
+        choices: [ 0, 1, 2, 3 ]
+        required: false
+    cert_key_tag:
+        description:
+            - 16 bit value computed for the key embedded in the certificate as specified in the DNSSEC Standard [RFC 2535].
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-4.1.6
+            - Required for C(type=CERT) when C(state=present).
+        type: int
+        required: false
+    cert_type:
+        description:
+            - Certificate Type.
+            - https://datatracker.ietf.org/doc/html/rfc2538.html#section-2.1
+            - Required for C(type=CERT) when C(state=present).
+        type: int
+        required: false
+    domain:
+        description:
+            - The name of the Domain to work with (e.g. "example.com").
+        type: str
+        required: true
     flag:
         description:
             - Flag for C(type=CAA) record defining if record is critical.
@@ -289,38 +463,40 @@ options:
             - Required for C(type=CAA) and C(type=NAPTR) when C(state=present).
         type: str
         required: false
-    tag:
+    hash:
         description:
-            - Tag identifier.
-            - An ASCII string that defines the identifier of the property represented by the record.
-            - Required for C(type=CAA) when C(state=present).
-        type: str
-        choices: [ issue, issuewild, iodef ]
-        required: false
-    cert_usage:
-        description:
-            - Certificate usage number.
-            - Required for C(type=TLSA) when C(state=present).
-        type: int
-        choices: [ 0, 1, 2, 3 ]
-        required: false
-    domain:
-        description:
-            - The name of the Domain to work with (e.g. "example.com").
-        type: str
-        required: true
+            - A hash (ex. SHA-256) in hex digits.
+            - Must be at least 56 digits long.
+            - Can be an email name for C(type=SMIMEA)
+            - Required for C(type=OPENPGPKEY) when C(state=present)
+            - Required for C(type=SMIMEA) when C(state=present)
     hash_type:
         description:
             - Hash type number.
             - Required for C(type=SSHFP) and C(type=TLSA) when C(state=present).
         type: int
         required: false
-    regex:
+    key_flags:
         description:
-            - Regex string.
-            - Defines what should be replaced with the defined C(substitution).
-            - Required for C(type=NAPTR) when C(state=present).
-        type: str
+            - Key Flags Field.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.1.2
+            - Required for C(type=KEY) when C(state=present).
+        type: int
+        required: false
+    key_protocol:
+        description:
+            - Protocol Octet.
+            - https://datatracker.ietf.org/doc/html/rfc2535#section-3.1.3
+            - Required for C(type=KEY) when C(state=present).
+        type: int
+        required: false
+    matching_type:
+        description:
+            - Certificate Matching Type.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.3
+            - Required for C(type=SMIMEA) when C(state=present).
+        type: int
+        choices: [ 0, 1 ]
         required: false
     password:
         description:
@@ -350,6 +526,13 @@ options:
         required: false
         default: ''
         aliases: [ name ]
+    regex:
+        description:
+            - Regex string.
+            - Defines what should be replaced with the defined C(substitution).
+            - Required for C(type=NAPTR) when C(state=present).
+        type: str
+        required: false
     reversedns:
         description:
             - Whether the record (an IP) should be converted to a reverse dns value.
@@ -360,7 +543,9 @@ options:
     selector:
         description:
             - Selector number.
+            - https://datatracker.ietf.org/doc/html/rfc6698#section-2.1.2
             - Required for C(type=TLSA) when C(state=present).
+            - Required for C(type=SMIMEA) when C(state=present).
         type: int
         required: false
         choices: [ 0, 1 ]
@@ -392,6 +577,14 @@ options:
             - Required for C(type=NAPTR) when C(state=present).
         type: str
         required: false
+    tag:
+        description:
+            - Tag identifier.
+            - An ASCII string that defines the identifier of the property represented by the record.
+            - Required for C(type=CAA) when C(state=present).
+        type: str
+        choices: [ issue, issuewild, iodef ]
+        required: false
     ttl:
         description:
             - The TTL to give the new record.
@@ -404,7 +597,7 @@ options:
             - The type of DNS record.
         type: str
         required: false
-        choices: [ A, AAAA, AFSDB, CAA, CNAME, HINFO, LOC, MX, NAPTR, NS, PTR, RP, SOA, SRV, SSHFP, TLSA, TXT ]
+        choices: [ A, AAAA, AFSDB, ALIAS, CAA, CERT, CNAME, HINFO, KEY, LOC, MX, NAPTR, NS, OPENPGPKEY, PTR, RP, SMIMEA, SOA, SRV, SSHFP, TLSA, TXT, URI ]
     username:
         description:
             - INWX Account Username
@@ -467,7 +660,7 @@ record:
             type: int
             sample: 3600
 api_response:
-    description: A dictionary that contains the API response when an error has occurred.
+    description: A dictionary containing the API response when an error occurrence.
     returned: failure
     type: str
 ```
