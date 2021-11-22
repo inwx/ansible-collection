@@ -895,7 +895,7 @@ def build_record_key(module):
     values = (module.params['key_flags'],
               module.params['key_protocol'],
               module.params['algorithm'],
-              module.params['value'])
+              re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value']))
     return ' '.join(map(str, values))
 
 
@@ -943,8 +943,7 @@ def build_record_tlsa(module):
 
 
 def build_record_uri(module):
-    keys = ('priority', 'weight', '"' + 'value' + '"')
-    return ' '.join(map(lambda key: str(module.params[key]), keys))
+    return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + module.params['value'] + '"'
 
 
 def build_default_record(module):
