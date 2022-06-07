@@ -1,0 +1,25 @@
+---
+
+- hosts: test-host.com
+  remote_user: testuser
+  become: yes
+  tasks:
+    - name: Retrieve session for account with two factor authentication
+        inwx.collection.session:
+          username: 'test_user_name'
+          password: 'test_user_password'
+          shared_secret: 'test_user_shared_secret'
+        register: temp_session_output
+
+    - name: Set inwx session as fact
+      set_fact:
+        inwx_session: "{{ temp_session_output.result.session }}"
+        temp_session_result: # set to nothing
+
+    - name: Ensure A record 'test' exists with prefetched API session
+      inwx.collection.dns:
+        domain: example.com
+        type: A
+        record: test
+        value: 1.2.3.4
+        session: '{{ inwx_session }}'

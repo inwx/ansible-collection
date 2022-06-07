@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-# Copyright: (c) 2021, INWX <developer@inwx.de>
+# Copyright: (c) 2022, INWX <developer@inwx.de>
 # MIT License (see https://opensource.org/licenses/MIT)
 
 from __future__ import absolute_import, division, print_function
@@ -24,7 +24,7 @@ requirements:
 version_added: "2.10"
 short_description: Manage INWX DNS records
 notes:
-    - "This module does NOT support two factor authentication due to excessive rebuilding of the API client and one time use of an OTP."
+    - "This module does NOT support two factor authentication. Use the inwx.collection.session module to get a session for an account with two factor authentication."
 description:
     - "Manages DNS records via the INWX API."
 options:
@@ -705,7 +705,7 @@ class ApiType:
 
 
 class ApiClient:
-    CLIENT_VERSION = '3.1.0'
+    CLIENT_VERSION = '3.1.1'
     API_LIVE_URL = 'https://api.domrobot.com'
     API_OTE_URL = 'https://api.ote.domrobot.com'
 
@@ -849,7 +849,10 @@ class ApiClient:
         key = base64.b32decode(shared_secret, True)
         msg = struct.pack(">Q", int(time.time()) // 30)
         hmac_hash = hmac.new(key, msg, hashlib.sha1).digest()
-        o = hmac_hash[19] & 15
+        if sys.version_info.major == 3:
+            o = hmac_hash[19] & 15
+        else:
+            o = ord(hmac_hash[19]) & 15
         hmac_hash = (struct.unpack(">I", hmac_hash[o:o + 4])[0] & 0x7fffffff) % 1000000
         return hmac_hash
 
@@ -1115,8 +1118,11 @@ def call_api_authenticated(module, method, params):
 
     client = ApiClient(api_url=api_url, api_type=ApiType.JSON_RPC, debug_mode=True)
 
-    params['user'] = str(module.params['username'])
-    params['pass'] = str(module.params['password'])
+    if module.params['session'] is not None and not str(module.params['session']).isspace():
+        client.api_session.cookies.set('domrobot', str(module.params['session']))
+    else:
+        params['user'] = str(module.params['username'])
+        params['pass'] = str(module.params['password'])
 
     params = remove_dict_none_values(params)
     return client.call_api(method, params)
@@ -1260,12 +1266,13 @@ def run_module():
             key_protocol=dict(type='int', required=False),
             matching_type=dict(type='int', required=False, choices=[0, 1]),
             regex=dict(type='str', required=False),
-            password=dict(type='str', required=True, aliases=['pass'], no_log=True),
+            password=dict(type='str', required=False, aliases=['pass'], no_log=True),
             priority=dict(type='int', required=False, default=1),
             port=dict(type='int', required=False),
             record=dict(type='str', required=False, default='', aliases=['name']),
             reversedns=dict(type='bool', required=False, default=False),
             selector=dict(type='int', required=False, choices=[0, 1]),
+            session=dict(type='str', required=False),
             service=dict(type='str', required=False),
             solo=dict(type='bool', required=False, default=False),
             state=dict(type='str', choices=['present', 'absent'], default='present'),
@@ -1275,7 +1282,7 @@ def run_module():
                       choices=['A', 'AAAA', 'AFSDB', 'ALIAS', 'CAA', 'CERT', 'CNAME', 'HINFO', 'KEY', 'LOC', 'MX',
                                'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SMIMEA', 'SOA', 'SRV', 'SSHFP',
                                'TLSA', 'TXT', 'URI']),
-            username=dict(type='str', required=True, aliases=['user']),
+            username=dict(type='str', required=False, aliases=['user']),
             value=dict(type='str', required=False, aliases=['content'], default=''),
             weight=dict(type='int', required=False, default=1),
         ),
@@ -1283,6 +1290,12 @@ def run_module():
         required_if=[
             ('state', 'absent', ['record']),
             ('state', 'present', ['record', 'type'])
+        ],
+        required_together=[
+            ('username', 'password')
+        ],
+        required_one_of=[
+            ('username', 'session')
         ]
     )
 
