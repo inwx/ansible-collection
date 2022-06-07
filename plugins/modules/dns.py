@@ -944,7 +944,8 @@ def build_record_tlsa(module):
 
 
 def build_record_uri(module):
-    return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + str(module.params['value']) + '"'
+    return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + str(
+        module.params['value']) + '"'
 
 
 def build_default_record(module):
@@ -998,7 +999,8 @@ def get_record_fqdn(module):
             used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
 
         record = used_hash + '._smimecert'
-        if module.params['record'] and not str(module.params['record']).isspace() and str(module.params['record']) != '@':
+        if module.params['record'] and not str(module.params['record']).isspace() and str(
+                module.params['record']) != '@':
             record += '.' + str(module.params['record'])
         return record + '.' + str(module.params['domain'])
     elif str(module.params['type']) == 'OPENPGPKEY':
@@ -1017,7 +1019,8 @@ def get_record_fqdn(module):
             used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
 
         record = used_hash + '._openpgpkey'
-        if module.params['record'] and not str(module.params['record']).isspace() and str(module.params['record']) != '@':
+        if module.params['record'] and not str(module.params['record']).isspace() and str(
+                module.params['record']) != '@':
             record += '.' + str(module.params['record'])
         return record + '.' + str(module.params['domain'])
     elif str(module.params['type']) == 'PTR':
@@ -1036,7 +1039,8 @@ def get_record_fqdn(module):
                 '.')
     else:
         fqdn = ''
-        if module.params['record'] and not str(module.params['record']).isspace() and str(module.params['record']) != '@':
+        if module.params['record'] and not str(module.params['record']).isspace() and str(
+                module.params['record']) != '@':
             fqdn = str(module.params['record']) + '.'
         fqdn += str(module.params['domain'])
         return fqdn
@@ -1246,7 +1250,8 @@ def check_and_install_module(module, python_module_name, apt_module_name):
             pass
 
         if not import_successful:
-            module.fail_json(msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
+            module.fail_json(
+                msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
 
 
 def run_module():
@@ -1358,7 +1363,8 @@ def run_module():
                 module.exit_json(changed=True, result={'record': updated_record})
             else:
                 # identical record exists.
-                module.exit_json(changed=bool(module.params['solo']) and solomode_deletions, result={'record': found_record})
+                module.exit_json(changed=bool(module.params['solo']) and solomode_deletions,
+                                 result={'record': found_record})
         else:
             # record doesn't exist, create it.
             if module.check_mode:

@@ -297,7 +297,8 @@ def run_module():
 
     client = ApiClient(api_url=api_url, api_type=ApiType.JSON_RPC, debug_mode=True)
 
-    login_result = client.login(str(module.params['username']), str(module.params['password']), module.params['shared_secret'])
+    login_result = client.login(str(module.params['username']), str(module.params['password']),
+                                module.params['shared_secret'])
 
     if login_result['code'] != 1000:
         module.fail_json(msg='API error.', result={'api_response': login_result})
