@@ -866,6 +866,7 @@ from ansible.module_utils.basic import AnsibleModule
 
 
 def remove_suffix(input_string, suffix):
+    input_string = str(input_string)
     if suffix and input_string.endswith(suffix):
         return input_string[:-len(suffix)]
     return input_string
@@ -877,39 +878,36 @@ def build_record_afsdb(module):
 
 
 def build_record_caa(module):
-    values = (module.params['flag'],
-              module.params['tag'],
-              '"' + module.params['value'] + '"')
+    values = (str(module.params['flag']),
+              str(module.params['tag']),
+              '"' + str(module.params['value']) + '"')
     return ' '.join(map(str, values))
 
 
 def build_record_cert(module):
-    values = (module.params['cert_type'],
-              module.params['cert_key_tag'],
-              module.params['algorithm'],
-              module.params['value'])
-    return ' '.join(map(str, values))
+    keys = ('cert_type', 'cert_key_tag', 'algorithm', 'value')
+    return ' '.join(map(lambda key: str(module.params[key]), keys))
 
 
 def build_record_key(module):
-    values = (module.params['key_flags'],
-              module.params['key_protocol'],
-              module.params['algorithm'],
-              re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value']))
+    values = (str(module.params['key_flags']),
+              str(module.params['key_protocol']),
+              str(module.params['algorithm']),
+              re.sub(r'(-----[A-Z ]*-----)|(\s)', '', str(module.params['value'])))
     return ' '.join(map(str, values))
 
 
 def build_record_naptr(module):
-    values = (module.params['weight'],
-              '"' + module.params['flag'] + '"',
-              '"' + module.params['service'] + '"',
-              module.params['regex'],
-              module.params['substitution'])
+    values = (str(module.params['weight']),
+              '"' + str(module.params['flag']) + '"',
+              '"' + str(module.params['service']) + '"',
+              str(module.params['regex']),
+              str(module.params['substitution']))
     return ' '.join(map(str, values))
 
 
 def build_record_openpgpkey(module):
-    trimmed = re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value'])
+    trimmed = re.sub(r'(-----[A-Z ]*-----)|(\s)', '', str(module.params['value']))
     # Removing checksum from end of key
     if len(trimmed) < 5:
         module.fail_json(msg='Supplied "value" value is too short.')
@@ -920,16 +918,16 @@ def build_record_openpgpkey(module):
 
 def build_record_smimea(module):
     values = (
-        module.params['cert_usage'],
-        module.params['selector'],
-        module.params['matching_type'],
-        re.sub(r'(-----[A-Z ]*-----)|(\s)', '', module.params['value']))
+        str(module.params['cert_usage']),
+        str(module.params['selector']),
+        str(module.params['matching_type']),
+        re.sub(r'(-----[A-Z ]*-----)|(\s)', '', str(module.params['value'])))
     return ' '.join(map(str, values))
 
 
 def build_record_srv(module):
-    values = (module.params['weight'], module.params['port'], module.params['value'])
-    return ' '.join(map(str, values))
+    keys = ('weight', 'port', 'value')
+    return ' '.join(map(lambda key: str(module.params[key]), keys))
 
 
 def build_record_sshfp(module):
@@ -943,11 +941,11 @@ def build_record_tlsa(module):
 
 
 def build_record_uri(module):
-    return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + module.params['value'] + '"'
+    return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + str(module.params['value']) + '"'
 
 
 def build_default_record(module):
-    return module.params['value']
+    return str(module.params['value'])
 
 
 def build_record_content(module):
@@ -981,7 +979,7 @@ def build_record_content(module):
 
 
 def get_record_fqdn(module):
-    if module.params['type'] == 'SMIMEA':
+    if str(module.params['type']) == 'SMIMEA':
         used_hash = str(module.params['hash'])
         if re.match('^[a-fA-F0-9]{56,64}$', used_hash):
             if len(used_hash) > 56:
@@ -997,10 +995,10 @@ def get_record_fqdn(module):
             used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
 
         record = used_hash + '._smimecert'
-        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
-            record += '.' + module.params['record']
-        return record + '.' + module.params['domain']
-    elif module.params['type'] == 'OPENPGPKEY':
+        if module.params['record'] and not str(module.params['record']).isspace() and str(module.params['record']) != '@':
+            record += '.' + str(module.params['record'])
+        return record + '.' + str(module.params['domain'])
+    elif str(module.params['type']) == 'OPENPGPKEY':
         used_hash = str(module.params['hash'])
         if re.match('^[a-fA-F0-9]{56,64}$', used_hash):
             if len(used_hash) > 56:
@@ -1016,28 +1014,28 @@ def get_record_fqdn(module):
             used_hash = m.hexdigest()[0:56]  # hash should only be 56 chars long.
 
         record = used_hash + '._openpgpkey'
-        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
-            record += '.' + module.params['record']
-        return record + '.' + module.params['domain']
-    elif module.params['type'] == 'PTR':
-        if module.params['reversedns']:
+        if module.params['record'] and not str(module.params['record']).isspace() and str(module.params['record']) != '@':
+            record += '.' + str(module.params['record'])
+        return record + '.' + str(module.params['domain'])
+    elif str(module.params['type']) == 'PTR':
+        if bool(module.params['reversedns']):
             if sys.version_info.major == 3:
                 check_and_install_module(module, 'netaddr', 'python3-netaddr')
             elif sys.version_info.major == 2:
                 check_and_install_module(module, 'netaddr', 'python-netaddr')
             import netaddr
 
-            return remove_suffix(netaddr.IPAddress(module.params['record']).reverse_dns,
-                                 '.' + remove_suffix(module.params['domain'], '.') + '.')
+            return remove_suffix(netaddr.IPAddress(str(module.params['record'])).reverse_dns,
+                                 '.' + remove_suffix(str(module.params['domain']), '.') + '.')
         else:
             return remove_suffix(
                 remove_suffix(remove_suffix(module.params['record'], '.'), remove_suffix(module.params['domain'], '.')),
                 '.')
     else:
         fqdn = ''
-        if module.params['record'] and not module.params['record'].isspace() and module.params['record'] != '@':
-            fqdn = module.params['record'] + '.'
-        fqdn += module.params['domain']
+        if module.params['record'] and not str(module.params['record']).isspace() and str(module.params['record']) != '@':
+            fqdn = str(module.params['record']) + '.'
+        fqdn += str(module.params['domain'])
         return fqdn
 
 
@@ -1068,13 +1066,13 @@ def check_present_state_required_arguments(module):
         'URI': ['priority', 'weight', 'value']
     }
 
-    unsatisfied_params = required_params_for_type[module.params['type']]
+    unsatisfied_params = required_params_for_type[str(module.params['type'])]
 
     for required_param in unsatisfied_params:
         if module.params.get(required_param, None) is not None:
             unsatisfied_params.remove(required_param)
         else:
-            module.fail_json(msg='arguments missing for type ' + module.params['type']
+            module.fail_json(msg='arguments missing for type ' + str(module.params['type'])
                                  + ' record: ' + ' '.join(unsatisfied_params))
             return
 
@@ -1082,11 +1080,11 @@ def check_present_state_required_arguments(module):
 def build_check_mode_record(module):
     return {
         'id': 0,
-        'type': module.params['type'],
+        'type': str(module.params['type']),
         'name': get_record_fqdn(module),
         'content': build_record_content(module),
-        'priority': module.params['priority'],
-        'ttl': module.params['ttl']
+        'priority': int(module.params['priority']),
+        'ttl': int(module.params['ttl'])
     }
 
 
@@ -1110,15 +1108,15 @@ def remove_dict_none_values(dictionary):
 
 
 def call_api_authenticated(module, method, params):
-    if module.params['api_env'] == 'live':
+    if str(module.params['api_env']) == 'live':
         api_url = ApiClient.API_LIVE_URL
     else:
         api_url = ApiClient.API_OTE_URL
 
     client = ApiClient(api_url=api_url, api_type=ApiType.JSON_RPC, debug_mode=True)
 
-    params['user'] = module.params['username']
-    params['pass'] = module.params['password']
+    params['user'] = str(module.params['username'])
+    params['pass'] = str(module.params['password'])
 
     params = remove_dict_none_values(params)
     return client.call_api(method, params)
@@ -1130,15 +1128,15 @@ def get_records(module, ignore_content=False):
     else:
         content = build_record_content(module)
 
-    if module.params['type'] == 'SOA':
+    if str(module.params['type']) == 'SOA':
         result = call_api_authenticated(module, 'nameserver.info', {
-            'domain': module.params['domain'],
-            'type': module.params['type']
+            'domain': str(module.params['domain']),
+            'type': str(module.params['type'])
         })
     else:
         result = call_api_authenticated(module, 'nameserver.info', {
-            'domain': module.params['domain'],
-            'type': module.params['type'],
+            'domain': str(module.params['domain']),
+            'type': str(module.params['type']),
             'name': get_record_fqdn(module),
             'content': content
         })
@@ -1160,7 +1158,7 @@ def update_soa_record(module, record_id):
         'id': record_id,
         'name': get_record_fqdn(module),
         'content': build_record_content(module),
-        'ttl': module.params['ttl']
+        'ttl': int(module.params['ttl'])
     })
 
     if result['code'] != 1000:
@@ -1174,7 +1172,7 @@ def update_soa_record(module, record_id):
 def update_record_ttl(module, record_id):
     result = call_api_authenticated(module, 'nameserver.updateRecord', {
         'id': record_id,
-        'ttl': module.params['ttl']
+        'ttl': int(module.params['ttl'])
     })
 
     if result['code'] != 1000:
@@ -1187,12 +1185,12 @@ def update_record_ttl(module, record_id):
 def create_record(module):
     record_content = build_record_content(module)
     result = call_api_authenticated(module, 'nameserver.createRecord', {
-        'domain': module.params['domain'],
-        'type': module.params['type'],
+        'domain': str(module.params['domain']),
+        'type': str(module.params['type']),
         'content': record_content,
         'name': get_record_fqdn(module),
-        'ttl': module.params['ttl'],
-        'prio': module.params['priority']
+        'ttl': int(module.params['ttl']),
+        'prio': int(module.params['priority'])
     })
 
     if result['code'] != 1000:
@@ -1296,36 +1294,36 @@ def run_module():
 
     found_records = get_records(module)
 
-    if module.params['state'] == 'absent':
+    if str(module.params['state']) == 'absent':
         if found_records:
-            if module.params['type'] == 'SOA':
+            if str(module.params['type']) == 'SOA':
                 module.fail_json(changed=False, msg="SOA record can only be updated.")
             else:
                 # records exist, delete them if multiple match.
                 if not module.check_mode:
                     for found_record in found_records:
-                        delete_record(module, found_record['id'])
+                        delete_record(module, int(found_record['id']))
                 module.exit_json(changed=True)
         else:
             # record doesn't exist, nothing to delete.
             module.exit_json(changed=False)
-    elif module.params['state'] == 'present':
+    elif str(module.params['state']) == 'present':
         check_present_state_required_arguments(module)
-        if module.params['solo']:
+        if bool(module.params['solo']):
             solomode_deletions = False
             all_records = get_records(module, ignore_content=True)
             if all_records:
                 for record in all_records:
                     if record['content'] != build_record_content(module):
                         if not module.check_mode:
-                            delete_record(module, record['id'])
+                            delete_record(module, int(record['id']))
                         solomode_deletions = True
-        if module.params['type'] == 'SOA':
+        if str(module.params['type']) == 'SOA':
             # can only be one
             soa_record = found_records[0]
             if soa_record['name'] == get_record_fqdn(module) \
-                    and soa_record['content'] == build_record_content(module) \
-                    and soa_record['ttl'] == module.params['ttl']:
+                    and str(soa_record['content']) == str(build_record_content(module)) \
+                    and int(soa_record['ttl']) == int(module.params['ttl']):
                 # record, content and ttl are equal, nothing changed.
                 module.exit_json(changed=False, result={'record': soa_record})
             else:
@@ -1338,7 +1336,7 @@ def run_module():
         elif found_records:
             # should only contain one record
             found_record = found_records[0]
-            if found_record['ttl'] != module.params['ttl']:
+            if int(found_record['ttl']) != int(module.params['ttl']):
                 # record exists but with another ttl. Update it.
                 if module.check_mode:
                     updated_record = build_check_mode_record(module)
@@ -1347,7 +1345,7 @@ def run_module():
                 module.exit_json(changed=True, result={'record': updated_record})
             else:
                 # identical record exists.
-                module.exit_json(changed=module.params['solo'] and solomode_deletions, result={'record': found_record})
+                module.exit_json(changed=bool(module.params['solo']) and solomode_deletions, result={'record': found_record})
         else:
             # record doesn't exist, create it.
             if module.check_mode:
