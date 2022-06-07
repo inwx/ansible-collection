@@ -24,7 +24,8 @@ requirements:
 version_added: "2.10"
 short_description: Manage INWX DNS records
 notes:
-    - "This module does NOT support two factor authentication. Use the inwx.collection.session module to get a session for an account with two factor authentication."
+    - "This module does NOT support two factor authentication."
+    - "Use the inwx.collection.session module to get a session for an account with two factor authentication."
 description:
     - "Manages DNS records via the INWX API."
 options:
@@ -511,7 +512,7 @@ EXAMPLES = '''
     value: mail@example.com
     username: test_user
     password: test_password
-    
+
 - name: Create a example.com RP record
   inwx.collection.dns:
     domain: example.com
@@ -531,7 +532,7 @@ EXAMPLES = '''
         AiEA/qkGwyRr2E/VpuVjzxJTpL1nMaqk8j30/k7K6dtihVU=
     username: test_user
     password: test_password
-    
+
 - name: Create a example.com RP record
   inwx.collection.dns:
     domain: example.com
