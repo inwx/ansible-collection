@@ -12,10 +12,12 @@ ansible-galaxy collection install inwx.collection
 ## Modules
 
 * [dns](plugins/docs/dns-module-documentation.md) (DNS management)
+* [session](plugins/docs/session-module-documentation.md) (Retrieval of two factor authenticated API session)
 
 ## Playbooks
 
-* [DNS ready to go example playbook](playbooks/examples/dns_requests_installation.yml)
+* [DNS ready to go example playbooks](playbooks/examples/)
+* [2FA example playbook](playbooks/examples/dns_use_2fa.yml)
 
 ## Roles
 

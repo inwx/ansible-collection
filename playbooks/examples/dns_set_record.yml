@@ -4,14 +4,6 @@
   remote_user: testuser
   become: yes
   tasks:
-    - name: Ensure 'pip' is installed
-      apt:
-        name: python-pip
-        update_cache: yes
-    - name: Ensure python module 'requests' is installed
-      pip:
-        name: requests
-    - name: Ensure A record 'test' exists
       inwx.collection.dns:
         domain: example.com
         type: A

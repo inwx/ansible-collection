@@ -1,4 +1,4 @@
-# inwx.dns module
+# inwx.collection.dns module
 
 Module for managing dns records via the api.
 
@@ -11,7 +11,7 @@ Module for managing dns records via the api.
 
 ### Playbooks
 
-* [Ready to go example playbook](../../playbooks/examples/dns_requests_installation.yml)
+* [Ready to go example playbooks](../../playbooks/examples/)
 
 ### Tasks
 
