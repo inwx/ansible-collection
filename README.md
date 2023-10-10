@@ -1,6 +1,6 @@
 # Ansible Collection
 
-Collection of modules, playbooks and roles for the INWX api. This plugin is on Ansible Galaxy: https://galaxy.ansible.com/inwx/collection
+Collection of modules, playbooks and roles for the INWX api. This plugin is on Ansible Galaxy: https://galaxy.ansible.com/ui/repo/published/inwx/collection/
 
 ## Installation
 
