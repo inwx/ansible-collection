@@ -1144,12 +1144,18 @@ def get_records(module, ignore_content=False):
             'domain': str(module.params['domain']),
             'type': str(module.params['type'])
         })
-    else:
+    elif content != "":
         result = call_api_authenticated(module, 'nameserver.info', {
             'domain': str(module.params['domain']),
             'type': str(module.params['type']),
             'name': get_record_fqdn(module),
             'content': content
+        })
+    else:
+        result = call_api_authenticated(module, 'nameserver.info', {
+            'domain': str(module.params['domain']),
+            'type': str(module.params['type']),
+            'name': get_record_fqdn(module)
         })
 
     if result['code'] != 1000:
