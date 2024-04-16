@@ -213,7 +213,7 @@ options:
             - The type of DNS record.
         type: str
         required: false
-        choices: [ A, AAAA, AFSDB, ALIAS, CAA, CERT, CNAME, HINFO, KEY, LOC, MX, NAPTR, NS, OPENPGPKEY, PTR, RP, SMIMEA, SOA, SRV, SSHFP, TLSA, TXT, URI ]
+        choices: [ A, AAAA, AFSDB, ALIAS, CAA, CERT, CNAME, HINFO, HTTPS, KEY, LOC, MX, NAPTR, NS, OPENPGPKEY, PTR, RP, SMIMEA, SOA, SRV, SSHFP, TLSA, TXT, URI ]
     username:
         description:
             - INWX Account Username
@@ -963,6 +963,7 @@ def build_record_content(module):
         'CERT': build_record_cert,
         'CNAME': build_default_record,
         'HINFO': build_default_record,
+        'HTTPS': build_default_record,
         'KEY': build_record_key,
         'LOC': build_default_record,
         'MX': build_default_record,
@@ -1057,6 +1058,7 @@ def check_present_state_required_arguments(module):
         'CERT': ['cert_type', 'cert_key_tag', 'algorithm', 'value'],
         'CNAME': ['value'],
         'HINFO': ['value'],
+        'HTTPS': ['value'],
         'KEY': ['key_flags', 'key_protocol', 'algorithm', 'value'],
         'LOC': ['value'],
         'MX': ['priority', 'value'],
@@ -1285,8 +1287,8 @@ def run_module():
             substitution=dict(type='str', required=False),
             ttl=dict(type='int', required=False, default=86400),
             type=dict(type='str', required=True,
-                      choices=['A', 'AAAA', 'AFSDB', 'ALIAS', 'CAA', 'CERT', 'CNAME', 'HINFO', 'KEY', 'LOC', 'MX',
-                               'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SMIMEA', 'SOA', 'SRV', 'SSHFP',
+                      choices=['A', 'AAAA', 'AFSDB', 'ALIAS', 'CAA', 'CERT', 'CNAME', 'HINFO', 'HTTPS', 'KEY', 'LOC',
+                               'MX', 'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SMIMEA', 'SOA', 'SRV', 'SSHFP',
                                'TLSA', 'TXT', 'URI']),
             username=dict(type='str', required=False, aliases=['user']),
             value=dict(type='str', required=False, aliases=['content'], default=''),
