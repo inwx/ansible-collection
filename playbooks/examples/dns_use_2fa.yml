@@ -1,14 +1,13 @@
 ---
 
-- hosts: test-host.com
-  remote_user: testuser
-  become: yes
+- name: Run localhost inwx tasks
+  hosts: localhost
   tasks:
     - name: Retrieve session for account with two factor authentication
-        inwx.collection.session:
-          username: 'test_user_name'
-          password: 'test_user_password'
-          shared_secret: 'test_user_shared_secret'
+      inwx.collection.session:
+        username: "{{ lookup('env', 'ANSIBLE_INWX_USER') }}"
+        password: "{{ lookup('env', 'ANSIBLE_INWX_PASS') }}"
+        shared_secret: "{{ lookup('env', 'ANSIBLE_INWX_SECRET') }}"
         register: temp_session_output
 
     - name: Set inwx session as fact
@@ -21,5 +20,6 @@
         domain: example.com
         type: A
         record: test
-        value: 1.2.3.4
+        value:
+          - 1.2.3.4
         session: '{{ inwx_session }}'

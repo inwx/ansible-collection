@@ -1,13 +1,15 @@
 ---
 
-- hosts: test-host.com
-  remote_user: testuser
-  become: yes
+- name: Run localhost inwx tasks
+  hosts: localhost
   tasks:
+    - name: Create example.com records
       inwx.collection.dns:
         domain: example.com
         type: A
         record: test
-        value: 1.2.3.4
-        username: test_user
-        password: test_password
+        value:
+          - 1.2.3.4
+          - 2.3.4.5
+        username: "{{ lookup('env', 'ANSIBLE_INWX_USER') }}"
+        password: "{{ lookup('env', 'ANSIBLE_INWX_PASS') }}"
