@@ -8,8 +8,6 @@
         domain: example.com
         type: A
         record: test
-        value:
-          - 1.2.3.4
-          - 2.3.4.5
+        value: 1.2.3.4
         username: "{{ lookup('env', 'ANSIBLE_INWX_USER') }}"
         password: "{{ lookup('env', 'ANSIBLE_INWX_PASS') }}"

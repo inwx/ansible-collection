@@ -8,10 +8,10 @@
         username: "{{ lookup('env', 'ANSIBLE_INWX_USER') }}"
         password: "{{ lookup('env', 'ANSIBLE_INWX_PASS') }}"
         shared_secret: "{{ lookup('env', 'ANSIBLE_INWX_SECRET') }}"
-        register: temp_session_output
+      register: temp_session_output
 
     - name: Set inwx session as fact
-      set_fact:
+      ansible.builtin.set_fact:
         inwx_session: "{{ temp_session_output.result.session }}"
         temp_session_result: # set to nothing
 
@@ -20,6 +20,5 @@
         domain: example.com
         type: A
         record: test
-        value:
-          - 1.2.3.4
+        value: 1.2.3.4
         session: '{{ inwx_session }}'
