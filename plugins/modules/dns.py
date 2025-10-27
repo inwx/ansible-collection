@@ -28,6 +28,7 @@ notes:
     - "Use the inwx.collection.session module to get a session for an account with two factor authentication."
 description:
     - "Manages DNS records via the INWX API."
+    - "Supports creating multiple records with the same name and type by providing a list of values."
 options:
     algorithm:
         description:
@@ -176,6 +177,7 @@ options:
             - Wether the record should be the only one for that record name and type.
             - Only works with `state=present`
             - This will delete all other records with the same record name and type.
+            - When using multiple values, this ensures only the specified records exist.
         type: bool
         required: false
         default: false
@@ -224,8 +226,11 @@ options:
     value:
         description:
             - The record value.
+            - Can be a single value or a list of values for multiple records.
+            - When providing a list, multiple records will be created with the same name and type.
+            - When using C(solo=true) with multiple values, all existing records of the same name/type will be replaced.
             - Required for C(state=present).
-        type: str
+        type: raw
         required: false
         aliases: [ content ]
     weight:
@@ -629,6 +634,18 @@ EXAMPLES = '''
     solo: yes
     username: test_user
     password: test_password
+
+- name: Create multiple A records for test.example.com
+  inwx.collection.dns:
+    domain: example.com
+    type: A
+    record: test
+    value:
+      - 1.1.1.1
+      - 2.2.2.2
+    solo: yes
+    username: test_user
+    password: test_password
 '''
 
 RETURN = '''
@@ -877,27 +894,46 @@ def remove_suffix(input_string, suffix):
 
 
 def build_record_afsdb(module):
-    keys = ('service', 'value')
-    return ' '.join(map(lambda key: str(module.params[key]), keys))
+    service = str(module.params['service'])
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
+    return service + ' ' + value
 
 
 def build_record_caa(module):
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
     values = (str(module.params['flag']),
               str(module.params['tag']),
-              '"' + str(module.params['value']) + '"')
+              '"' + value + '"')
     return ' '.join(map(str, values))
 
 
 def build_record_cert(module):
-    keys = ('cert_type', 'cert_key_tag', 'algorithm', 'value')
-    return ' '.join(map(lambda key: str(module.params[key]), keys))
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
+    return str(module.params['cert_type']) + ' ' + str(module.params['cert_key_tag']) + ' ' + str(module.params['algorithm']) + ' ' + value
 
 
 def build_record_key(module):
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
     values = (str(module.params['key_flags']),
               str(module.params['key_protocol']),
               str(module.params['algorithm']),
-              re.sub(r'(-----[A-Z ]*-----)|(\s)', '', str(module.params['value'])))
+              re.sub(r'(-----[A-Z ]*-----)|(\s)', '', value))
     return ' '.join(map(str, values))
 
 
@@ -911,7 +947,12 @@ def build_record_naptr(module):
 
 
 def build_record_openpgpkey(module):
-    trimmed = re.sub(r'(-----[A-Z ]*-----)|(\s)', '', str(module.params['value']))
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
+    trimmed = re.sub(r'(-----[A-Z ]*-----)|(\s)', '', value)
     # Removing checksum from end of key
     if len(trimmed) < 5:
         module.fail_json(msg='Supplied "value" value is too short.')
@@ -921,36 +962,60 @@ def build_record_openpgpkey(module):
 
 
 def build_record_smimea(module):
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
     values = (
         str(module.params['cert_usage']),
         str(module.params['selector']),
         str(module.params['matching_type']),
-        re.sub(r'(-----[A-Z ]*-----)|(\s)', '', str(module.params['value'])))
+        re.sub(r'(-----[A-Z ]*-----)|(\s)', '', value))
     return ' '.join(map(str, values))
 
 
 def build_record_srv(module):
-    keys = ('weight', 'port', 'value')
-    return ' '.join(map(lambda key: str(module.params[key]), keys))
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
+    return str(module.params['weight']) + ' ' + str(module.params['port']) + ' ' + value
 
 
 def build_record_sshfp(module):
-    keys = ('algorithm', 'hash_type', 'value')
-    return ' '.join(map(lambda key: str(module.params[key]), keys))
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
+    return str(module.params['algorithm']) + ' ' + str(module.params['hash_type']) + ' ' + value
 
 
 def build_record_tlsa(module):
-    keys = ('cert_usage', 'selector', 'hash_type', 'value')
-    return ' '.join(map(lambda key: str(module.params[key]), keys))
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
+    return str(module.params['cert_usage']) + ' ' + str(module.params['selector']) + ' ' + str(module.params['hash_type']) + ' ' + value
 
 
 def build_record_uri(module):
-    return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + str(
-        module.params['value']) + '"'
+    value = module.params['value']
+    if isinstance(value, list):
+        value = str(value[0]) if value else ''
+    else:
+        value = str(value)
+    return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + value + '"'
 
 
 def build_default_record(module):
-    return str(module.params['value'])
+    value = module.params['value']
+    if isinstance(value, list):
+        return str(value[0]) if value else ''
+    return str(value)
 
 
 def build_record_content(module):
@@ -1083,7 +1148,10 @@ def check_present_state_required_arguments(module):
     unsatisfied_params = required_params_for_type[str(module.params['type'])]
 
     for required_param in unsatisfied_params:
-        if module.params.get(required_param, None) is not None:
+        param_value = module.params.get(required_param, None)
+        if param_value is not None:
+            if required_param == 'value' and isinstance(param_value, list) and len(param_value) == 0:
+                continue
             unsatisfied_params.remove(required_param)
         else:
             module.fail_json(msg='arguments missing for type ' + str(module.params['type'])
@@ -1092,11 +1160,20 @@ def check_present_state_required_arguments(module):
 
 
 def build_check_mode_record(module):
+    value = module.params['value']
+    if isinstance(value, list) and value:
+        original_value = module.params['value']
+        module.params['value'] = value[0]
+        content = build_record_content(module)
+        module.params['value'] = original_value
+    else:
+        content = build_record_content(module)
+    
     return {
         'id': 0,
         'type': str(module.params['type']),
         'name': get_record_fqdn(module),
-        'content': build_record_content(module),
+        'content': content,
         'priority': int(module.params['priority']),
         'ttl': int(module.params['ttl'])
     }
@@ -1143,14 +1220,17 @@ def get_records(module, ignore_content=False):
     if ignore_content:
         content = None
     else:
-        content = build_record_content(module)
+        if isinstance(module.params['value'], list):
+            content = None
+        else:
+            content = build_record_content(module)
 
     if str(module.params['type']) == 'SOA':
         result = call_api_authenticated(module, 'nameserver.info', {
             'domain': str(module.params['domain']),
             'type': str(module.params['type'])
         })
-    elif content != "":
+    elif content != "" and content is not None:
         result = call_api_authenticated(module, 'nameserver.info', {
             'domain': str(module.params['domain']),
             'type': str(module.params['type']),
@@ -1205,8 +1285,15 @@ def update_record_ttl(module, record_id):
     return get_records(module)[0]
 
 
-def create_record(module):
-    record_content = build_record_content(module)
+def create_record(module, value=None):
+    if value is None:
+        record_content = build_record_content(module)
+    else:
+        original_value = module.params['value']
+        module.params['value'] = value
+        record_content = build_record_content(module)
+        module.params['value'] = original_value
+    
     result = call_api_authenticated(module, 'nameserver.createRecord', {
         'domain': str(module.params['domain']),
         'type': str(module.params['type']),
@@ -1220,8 +1307,52 @@ def create_record(module):
         module.fail_json(msg='API error.', result={'api_response': result})
         return None
 
-    # fetch record again as the updated version should now be present
-    return get_records(module)[0]
+    return result['resData']['id']
+
+
+def create_multiple_records(module):
+    """Create multiple records for a list of values"""
+    values = module.params['value']
+    if not isinstance(values, list):
+        values = [values]
+    
+    created_records = []
+    for value in values:
+        record_id = create_record(module, value)
+        if record_id:
+            created_records.append(record_id)
+    
+    # Return the first created record for compatibility
+    if created_records:
+        # Fetch the first record to return its details
+        return get_records(module)[0]
+    return None
+
+
+def records_match_desired_values(module, existing_records):
+    """Check if existing records match the desired values"""
+    values = module.params['value']
+    if not isinstance(values, list):
+        values = [values]
+    
+    if len(existing_records) != len(values):
+        return False
+    
+    # Create a list of expected contents
+    expected_contents = []
+    for value in values:
+        original_value = module.params['value']
+        module.params['value'] = value
+        expected_contents.append(build_record_content(module))
+        module.params['value'] = original_value
+    
+    # Check if all expected contents are present
+    existing_contents = [record['content'] for record in existing_records]
+    for expected_content in expected_contents:
+        if expected_content not in existing_contents:
+            return False
+    
+    return True
 
 
 def delete_record(module, record_id):
@@ -1301,7 +1432,7 @@ def run_module():
                                'MX', 'NAPTR', 'NS', 'OPENPGPKEY', 'PTR', 'RP', 'SMIMEA', 'SOA', 'SRV', 'SSHFP', 'SVCB',
                                'TLSA', 'TXT', 'URI']),
             username=dict(type='str', required=False, aliases=['user']),
-            value=dict(type='str', required=False, aliases=['content'], default=''),
+            value=dict(type='raw', required=False, aliases=['content'], default=''),
             weight=dict(type='int', required=False, default=1),
         ),
         supports_check_mode=True,
@@ -1340,6 +1471,38 @@ def run_module():
             module.exit_json(changed=False)
     elif str(module.params['state']) == 'present':
         check_present_state_required_arguments(module)
+        
+        # handlin g multiple values
+        values = module.params['value']
+        if isinstance(values, list):
+            # handle solo mode differently for multiple values
+            if bool(module.params['solo']):
+                all_records = get_records(module, ignore_content=True)
+                if all_records and records_match_desired_values(module, all_records):
+                    # no changes needed
+                    module.exit_json(changed=False, result={'record': all_records[0]})
+                else:
+                    # delete all records
+                    if all_records:
+                        for record in all_records:
+                            if not module.check_mode:
+                                delete_record(module, int(record['id']))
+                    
+                    # create all new records
+                    if module.check_mode:
+                        created_record = build_check_mode_record(module)
+                    else:
+                        created_record = create_multiple_records(module)
+                    module.exit_json(changed=True, result={'record': created_record})
+            else:
+                # create each record individually 
+                if module.check_mode:
+                    created_record = build_check_mode_record(module)
+                else:
+                    created_record = create_multiple_records(module)
+                module.exit_json(changed=True, result={'record': created_record})
+        
+        # single value logic
         if bool(module.params['solo']):
             solomode_deletions = False
             all_records = get_records(module, ignore_content=True)
