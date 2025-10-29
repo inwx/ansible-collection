@@ -1113,6 +1113,34 @@ def build_record_from_response(record_data):
     }
 
 
+def format_record_for_diff(record):
+    if record is None:
+        return ""
+    
+    lines = []
+    lines.append("record: " + str(record.get('name', '')))
+    lines.append("ttl: " + str(record.get('ttl', '')))
+    lines.append("type: " + str(record.get('type', '')))
+    lines.append("value: " + str(record.get('content', '')))
+    
+    if record.get('type') in ['MX', 'SRV', 'URI'] and record.get('priority', 0) != 0:
+        lines.append("priority: " + str(record.get('priority', '')))
+    
+    return "\n".join(lines)
+
+
+def create_diff(before_record=None, after_record=None):
+    before_text = format_record_for_diff(before_record)
+    after_text = format_record_for_diff(after_record)
+    
+    return [{
+        'before': before_text,
+        'after': after_text,
+        'before_header': 'DNS record before change',
+        'after_header': 'DNS record after change'
+    }]
+
+
 def remove_dict_none_values(dictionary):
     filtered_dict = {}
     for key, value in dictionary.items():
@@ -1334,7 +1362,8 @@ def run_module():
                 if not module.check_mode:
                     for found_record in found_records:
                         delete_record(module, int(found_record['id']))
-                module.exit_json(changed=True)
+                diff = create_diff(before_record=found_records[0], after_record=None)
+                module.exit_json(changed=True, diff=diff)
         else:
             # record doesn't exist, nothing to delete.
             module.exit_json(changed=False)
@@ -1361,9 +1390,11 @@ def run_module():
                 # record, content or ttl changed, update it.
                 if module.check_mode:
                     updated_record = build_check_mode_record(module)
+                    diff = create_diff(before_record=soa_record, after_record=updated_record)
                 else:
                     updated_record = update_soa_record(module, soa_record['id'])
-                module.exit_json(changed=True, result={'record': updated_record})
+                    diff = create_diff(before_record=soa_record, after_record=updated_record)
+                module.exit_json(changed=True, result={'record': updated_record}, diff=diff)
         elif found_records:
             # should only contain one record
             found_record = found_records[0]
@@ -1371,9 +1402,11 @@ def run_module():
                 # record exists but with another ttl. Update it.
                 if module.check_mode:
                     updated_record = build_check_mode_record(module)
+                    diff = create_diff(before_record=found_record, after_record=updated_record)
                 else:
                     updated_record = update_record_ttl(module, found_record['id'])
-                module.exit_json(changed=True, result={'record': updated_record})
+                    diff = create_diff(before_record=found_record, after_record=updated_record)
+                module.exit_json(changed=True, result={'record': updated_record}, diff=diff)
             else:
                 # identical record exists.
                 module.exit_json(changed=bool(module.params['solo']) and solomode_deletions,
@@ -1382,9 +1415,11 @@ def run_module():
             # record doesn't exist, create it.
             if module.check_mode:
                 created_record = build_check_mode_record(module)
+                diff = create_diff(before_record=None, after_record=created_record)
             else:
                 created_record = create_record(module)
-            module.exit_json(changed=True, result={'record': created_record})
+                diff = create_diff(before_record=None, after_record=created_record)
+            module.exit_json(changed=True, result={'record': created_record}, diff=diff)
 
 
 def main():
