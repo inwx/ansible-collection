@@ -893,22 +893,22 @@ def remove_suffix(input_string, suffix):
     return input_string
 
 
-def build_record_afsdb(module):
-    service = str(module.params['service'])
+def get_single_value(module):
+    """Extract a single value from module.params['value'], handling both strings and lists."""
     value = module.params['value']
     if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+        return str(value[0]) if value else ''
+    return str(value)
+
+
+def build_record_afsdb(module):
+    service = str(module.params['service'])
+    value = get_single_value(module)
     return service + ' ' + value
 
 
 def build_record_caa(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     values = (str(module.params['flag']),
               str(module.params['tag']),
               '"' + value + '"')
@@ -916,20 +916,12 @@ def build_record_caa(module):
 
 
 def build_record_cert(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     return str(module.params['cert_type']) + ' ' + str(module.params['cert_key_tag']) + ' ' + str(module.params['algorithm']) + ' ' + value
 
 
 def build_record_key(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     values = (str(module.params['key_flags']),
               str(module.params['key_protocol']),
               str(module.params['algorithm']),
@@ -947,11 +939,7 @@ def build_record_naptr(module):
 
 
 def build_record_openpgpkey(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     trimmed = re.sub(r'(-----[A-Z ]*-----)|(\s)', '', value)
     # Removing checksum from end of key
     if len(trimmed) < 5:
@@ -962,11 +950,7 @@ def build_record_openpgpkey(module):
 
 
 def build_record_smimea(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     values = (
         str(module.params['cert_usage']),
         str(module.params['selector']),
@@ -976,46 +960,27 @@ def build_record_smimea(module):
 
 
 def build_record_srv(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     return str(module.params['weight']) + ' ' + str(module.params['port']) + ' ' + value
 
 
 def build_record_sshfp(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     return str(module.params['algorithm']) + ' ' + str(module.params['hash_type']) + ' ' + value
 
 
 def build_record_tlsa(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     return str(module.params['cert_usage']) + ' ' + str(module.params['selector']) + ' ' + str(module.params['hash_type']) + ' ' + value
 
 
 def build_record_uri(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        value = str(value[0]) if value else ''
-    else:
-        value = str(value)
+    value = get_single_value(module)
     return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + value + '"'
 
 
 def build_default_record(module):
-    value = module.params['value']
-    if isinstance(value, list):
-        return str(value[0]) if value else ''
-    return str(value)
+    return get_single_value(module)
 
 
 def build_record_content(module):
