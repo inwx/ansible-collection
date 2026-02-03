@@ -1333,7 +1333,7 @@ def run_module():
                 # records exist, delete them if multiple match.
                 if not module.check_mode:
                     for found_record in found_records:
-                        delete_record(module, int(found_record['id']))
+                        delete_record(module, str(found_record['id']))
                 module.exit_json(changed=True)
         else:
             # record doesn't exist, nothing to delete.
@@ -1347,7 +1347,7 @@ def run_module():
                 for record in all_records:
                     if record['content'] != build_record_content(module):
                         if not module.check_mode:
-                            delete_record(module, int(record['id']))
+                            delete_record(module, str(record['id']))
                         solomode_deletions = True
         if str(module.params['type']) == 'SOA':
             # can only be one
