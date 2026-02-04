@@ -1,3 +1,9 @@
+<p align="center">
+  <a href="https://www.inwx.de/en" target="_blank">
+    <img src="https://images.inwx.com/logos/inwx_nl.png">
+  </a>
+</p>
+
 # Ansible Collection
 
 Collection of modules, playbooks and roles for the INWX api. This plugin is on Ansible Galaxy: https://galaxy.ansible.com/ui/repo/published/inwx/collection/
