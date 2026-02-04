@@ -1,0 +1,50 @@
+---
+- name: Test multiple values for DNS records
+  hosts: localhost
+  tasks:
+    - name: Create multiple A records for test.example.com
+      inwx.collection.dns:
+        domain: example.com
+        type: A
+        record: test
+        value:
+          - 1.1.1.1
+          - 2.2.2.2
+        solo: true
+        username: "{{ lookup('env', 'ANSIBLE_INWX_USER') }}"
+        password: "{{ lookup('env', 'ANSIBLE_INWX_PASS') }}"
+
+    - name: Create multiple AAAA records for test.example.com
+      inwx.collection.dns:
+        domain: example.com
+        type: AAAA
+        record: test
+        value:
+          - 2001:db8::1
+          - 2001:db8::2
+        solo: true
+        username: "{{ lookup('env', 'ANSIBLE_INWX_USER') }}"
+        password: "{{ lookup('env', 'ANSIBLE_INWX_PASS') }}"
+
+    - name: Create multiple MX records for mail.example.com
+      inwx.collection.dns:
+        domain: example.com
+        type: MX
+        record: mail
+        priority: 10
+        value:
+          - mail1.example.com
+          - mail2.example.com
+        solo: true
+        username: "{{ lookup('env', 'ANSIBLE_INWX_USER') }}"
+        password: "{{ lookup('env', 'ANSIBLE_INWX_PASS') }}"
+
+    - name: Test single value still works (backward compatibility)
+      inwx.collection.dns:
+        domain: example.com
+        type: A
+        record: single
+        value: 127.0.0.1
+        solo: true
+        username: "{{ lookup('env', 'ANSIBLE_INWX_USER') }}"
+        password: "{{ lookup('env', 'ANSIBLE_INWX_PASS') }}"
