@@ -1,0 +1,193 @@
+- name: Test NS set
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Retrieve INWX session with 2FA
+      inwx.collection.session:
+        username: "{{ inwx_username }}"
+        password: "{{ inwx_password }}"
+        shared_secret: "{{ inwx_shared_secret }}"
+      register: inwx_session_output
+    - name: Set INWX session as fact
+      ansible.builtin.set_fact:
+        inwx_session: "{{ inwx_session_output.result.session }}"
+    - name: Create primary NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: primary-test
+        type: primary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        hostmaster: hostmaster@inwx.de
+    - name: Sleep before updating primary NS set (no change)
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Update primary NS set (no change)
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: primary-test
+        type: primary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        hostmaster: hostmaster@inwx.de
+    - name: Sleep before updating primary NS set (actual change)
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Update primary NS set (actual change)
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: primary-test
+        type: primary
+        ns:
+          - a.xnameserver.de
+          - b.xnameserver.de
+          - c.xnameserver.de
+        hostmaster: hostmaster@inwx.de
+    - name: Sleep before deleting primary NS set
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Delete primary NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: primary-test
+        state: absent
+    - name: Create secondary NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: secondary-test
+        type: secondary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        master_ip: 192.0.2.1
+    - name: Sleep before updating secondary NS set (no change)
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Update secondary NS set (no change)
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: secondary-test
+        type: secondary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        master_ip: 192.0.2.1
+    - name: Sleep before updating secondary NS set (actual change)
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Update secondary NS set (actual change)
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: secondary-test
+        type: secondary
+        ns:
+          - a.xnameserver.de
+          - b.xnameserver.de
+          - c.xnameserver.de
+        master_ip: 192.0.2.2
+    - name: Sleep before deleting secondary NS set
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Delete secondary NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: secondary-test
+        state: absent
+    - name: Create external NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: external-test
+        type: external
+        ns:
+          - ns.example.org
+          - ns2.example.org
+          - ns3.example.org
+    - name: Sleep before updating external NS set (no change)
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Update external NS set (no change)
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: external-test
+        type: external
+        ns:
+          - ns.example.org
+          - ns2.example.org
+          - ns3.example.org
+    - name: Sleep before updating external NS set (actual change)
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Update external NS set (actual change)
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: external-test
+        type: external
+        ns:
+          - a.example.net
+          - b.example.net
+          - c.example.net
+    - name: Sleep before deleting external NS set
+      ansible.builtin.pause:
+        seconds: 60
+    - name: Delete external NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: external-test
+        state: absent
+    - name: Test web, main, hostmaster with primary NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: primary-web-mail-hostmaster-test
+        type: primary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        web: 192.0.2.1
+        mail: 192.0.2.1
+        hostmaster: hostmaster@inwx.de
+    - name: Delete web, main, hostmaster with primary NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: primary-web-mail-hostmaster-test
+        state: absent
+    - name: Test web, main, hostmaster with secondary NS set (SHOULD WARN)
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: secondary-web-mail-hostmaster-test
+        type: secondary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        web: 192.0.2.1
+        mail: 192.0.2.1
+        hostmaster: hostmaster@inwx.de
+    - name: Delete web, main, hostmaster with secondary NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: secondary-web-mail-hostmaster-test
+        state: absent
+    - name: Test web, main, hostmaster with external NS set (SHOULD WARN)
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: external-web-mail-hostmaster-test
+        type: external
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        web: 192.0.2.1
+        mail: 192.0.2.1
+        hostmaster: hostmaster@inwx.de
+    - name: Delete web, main, hostmaster with external NS set
+      inwx.collection.nsset:
+        session: "{{ inwx_session }}"
+        name: external-web-mail-hostmaster-test
+        state: absent
