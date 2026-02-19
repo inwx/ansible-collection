@@ -1,0 +1,385 @@
+# Integration tests for inwx.collection.nsset
+#
+# Requires tests/integration/integration_config.yml with at minimum:
+#   inwx_username, inwx_password, inwx_api_env
+# Optionally:
+#   inwx_shared_secret  (for 2FA accounts)
+#
+# Run with:
+#   ansible-test integration nsset
+- name: Retrieve session (2FA)
+  inwx.collection.session:
+    username: "{{ inwx_username }}"
+    password: "{{ inwx_password }}"
+    shared_secret: "{{ inwx_shared_secret }}"
+    api_env: "{{ inwx_api_env | default('ote') }}"
+  register: inwx_session_output
+  when: inwx_shared_secret is defined
+- name: Set session fact
+  ansible.builtin.set_fact:
+    inwx_session: "{{ inwx_session_output.result.session }}"
+  when: inwx_shared_secret is defined
+# ---------------------------------------------------------------------------
+# PRIMARY nsset lifecycle
+# ---------------------------------------------------------------------------
+- name: PRIMARY nsset lifecycle
+  block:
+    - name: Create PRIMARY nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: primary-test
+        type: primary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        hostmaster: hostmaster@inwx.de
+      register: result
+    - name: Assert creation changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on initial create"
+    - name: Create PRIMARY nsset again (idempotency)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: primary-test
+        type: primary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        hostmaster: hostmaster@inwx.de
+      register: result
+    - name: Assert no change on idempotent create
+      ansible.builtin.assert:
+        that: not result.changed
+        fail_msg: "Expected changed=false on idempotent create"
+    - name: Update PRIMARY nsset (change ns)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: primary-test
+        type: primary
+        ns:
+          - a.xnameserver.de
+          - b.xnameserver.de
+          - c.xnameserver.de
+        hostmaster: hostmaster@inwx.de
+      register: result
+    - name: Assert update changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on ns update"
+    - name: Delete PRIMARY nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: primary-test
+        state: absent
+      register: result
+    - name: Assert deletion changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on delete"
+    - name: Delete PRIMARY nsset again (idempotency)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: primary-test
+        state: absent
+      register: result
+    - name: Assert no change on idempotent delete
+      ansible.builtin.assert:
+        that: not result.changed
+        fail_msg: "Expected changed=false on idempotent delete"
+  always:
+    - name: Cleanup PRIMARY nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: primary-test
+        state: absent
+      ignore_errors: true
+# ---------------------------------------------------------------------------
+# SECONDARY nsset lifecycle
+# ---------------------------------------------------------------------------
+- name: SECONDARY nsset lifecycle
+  block:
+    - name: Create SECONDARY nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: secondary-test
+        type: secondary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        master_ip: 192.0.2.1
+      register: result
+    - name: Assert creation changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on initial create"
+    - name: Create SECONDARY nsset again (idempotency)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: secondary-test
+        type: secondary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        master_ip: 192.0.2.1
+      register: result
+    - name: Assert no change on idempotent create
+      ansible.builtin.assert:
+        that: not result.changed
+        fail_msg: "Expected changed=false on idempotent create"
+    - name: Update SECONDARY nsset (change ns and master_ip)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: secondary-test
+        type: secondary
+        ns:
+          - a.xnameserver.de
+          - b.xnameserver.de
+          - c.xnameserver.de
+        master_ip: 192.0.2.2
+      register: result
+    - name: Assert update changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on ns/master_ip update"
+    - name: Delete SECONDARY nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: secondary-test
+        state: absent
+      register: result
+    - name: Assert deletion changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on delete"
+  always:
+    - name: Cleanup SECONDARY nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: secondary-test
+        state: absent
+      ignore_errors: true
+# ---------------------------------------------------------------------------
+# EXTERNAL nsset lifecycle
+# ---------------------------------------------------------------------------
+- name: EXTERNAL nsset lifecycle
+  block:
+    - name: Create EXTERNAL nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: external-test
+        type: external
+        ns:
+          - ns.example.org
+          - ns2.example.org
+          - ns3.example.org
+      register: result
+    - name: Assert creation changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on initial create"
+    - name: Create EXTERNAL nsset again (idempotency)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: external-test
+        type: external
+        ns:
+          - ns.example.org
+          - ns2.example.org
+          - ns3.example.org
+      register: result
+    - name: Assert no change on idempotent create
+      ansible.builtin.assert:
+        that: not result.changed
+        fail_msg: "Expected changed=false on idempotent create"
+    - name: Update EXTERNAL nsset (change ns)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: external-test
+        type: external
+        ns:
+          - a.example.net
+          - b.example.net
+          - c.example.net
+      register: result
+    - name: Assert update changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on ns update"
+    - name: Delete EXTERNAL nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: external-test
+        state: absent
+      register: result
+    - name: Assert deletion changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on delete"
+  always:
+    - name: Cleanup EXTERNAL nsset
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: external-test
+        state: absent
+      ignore_errors: true
+# ---------------------------------------------------------------------------
+# PRIMARY nsset with web/mail/hostmaster
+# ---------------------------------------------------------------------------
+- name: PRIMARY nsset with web/mail/hostmaster
+  block:
+    - name: Create PRIMARY nsset with web/mail/hostmaster
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: primary-web-mail-hostmaster-test
+        type: primary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        web: 192.0.2.1
+        mail: 192.0.2.1
+        hostmaster: hostmaster@inwx.de
+      register: result
+    - name: Assert creation changed
+      ansible.builtin.assert:
+        that: result.changed
+        fail_msg: "Expected changed=true on initial create"
+  always:
+    - name: Cleanup PRIMARY nsset with web/mail/hostmaster
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: primary-web-mail-hostmaster-test
+        state: absent
+      ignore_errors: true
+# ---------------------------------------------------------------------------
+# Warning: web/mail/hostmaster on non-PRIMARY types
+# ---------------------------------------------------------------------------
+- name: SECONDARY nsset with web/mail/hostmaster emits warnings
+  block:
+    - name: Create SECONDARY nsset with web/mail/hostmaster (should warn)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: secondary-web-mail-hostmaster-test
+        type: secondary
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        web: 192.0.2.1
+        mail: 192.0.2.1
+        hostmaster: hostmaster@inwx.de
+      register: result
+    - name: Assert warnings were emitted for web, mail, hostmaster
+      ansible.builtin.assert:
+        that:
+          - result.warnings | select('search', 'web') | list | length > 0
+          - result.warnings | select('search', 'mail') | list | length > 0
+          - result.warnings | select('search', 'hostmaster') | list | length > 0
+        fail_msg: "Expected warnings for web/mail/hostmaster on SECONDARY type"
+  always:
+    - name: Cleanup SECONDARY nsset with web/mail/hostmaster
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: secondary-web-mail-hostmaster-test
+        state: absent
+      ignore_errors: true
+- name: EXTERNAL nsset with web/mail/hostmaster emits warnings
+  block:
+    - name: Create EXTERNAL nsset with web/mail/hostmaster (should warn)
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: external-web-mail-hostmaster-test
+        type: external
+        ns:
+          - ns.inwx.de
+          - ns2.inwx.de
+          - ns3.inwx.de
+        web: 192.0.2.1
+        mail: 192.0.2.1
+        hostmaster: hostmaster@inwx.de
+      register: result
+    - name: Assert warnings were emitted for web, mail, hostmaster
+      ansible.builtin.assert:
+        that:
+          - result.warnings | select('search', 'web') | list | length > 0
+          - result.warnings | select('search', 'mail') | list | length > 0
+          - result.warnings | select('search', 'hostmaster') | list | length > 0
+        fail_msg: "Expected warnings for web/mail/hostmaster on EXTERNAL type"
+  always:
+    - name: Cleanup EXTERNAL nsset with web/mail/hostmaster
+      inwx.collection.nsset:
+        username: "{{ inwx_username | default(omit) }}"
+        password: "{{ inwx_password | default(omit) }}"
+        session: "{{ inwx_session | default(omit) }}"
+        api_env: "{{ inwx_api_env | default('ote') }}"
+        name: external-web-mail-hostmaster-test
+        state: absent
+      ignore_errors: true

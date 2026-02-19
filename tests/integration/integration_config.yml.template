@@ -1,0 +1,4 @@
+inwx_username: 'your_inwx_username'
+inwx_password: 'your_inwx_password'
+# inwx_shared_secret: 'your_totp_shared_secret'  # optional, only needed for 2FA accounts
+inwx_api_env: 'ote'

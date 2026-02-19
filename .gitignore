@@ -1,4 +1,5 @@
 inwx-collection*.tar.gz
+tests/integration/integration_config.yml
 
 # IntelliJ project files
 *.iml
