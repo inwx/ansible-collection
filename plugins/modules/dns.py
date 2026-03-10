@@ -1316,14 +1316,13 @@ def create_multiple_records(module):
     
     created_records = []
     for value in values:
-        record_id = create_record(module, value)
-        if record_id:
-            created_records.append(record_id)
+        record = create_record(module, value)
+        if record:
+            created_records.append(record)
     
     # Return the first created record for compatibility
     if created_records:
-        # Fetch the first record to return its details
-        return get_records(module)[0]
+        return created_records[0]
     return None
 
 
