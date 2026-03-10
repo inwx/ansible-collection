@@ -1300,7 +1300,12 @@ def create_record(module, value=None):
         module.fail_json(msg='API error.', result={'api_response': result})
         return None
 
-    return result['resData']['id']
+    created_records = get_records(module)
+    if created_records:
+        return created_records[0]
+
+    module.fail_json(msg='Record was created successfully but could not be fetched afterwards.')
+    return None
 
 
 def create_multiple_records(module):
