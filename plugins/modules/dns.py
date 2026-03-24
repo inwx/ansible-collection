@@ -1197,7 +1197,7 @@ def call_api_authenticated(module, method, params):
     else:
         api_url = ApiClient.API_OTE_URL
 
-    client = ApiClient(api_url=api_url, api_type=ApiType.JSON_RPC, debug_mode=True)
+    client = ApiClient(api_url=api_url, api_type=ApiType.JSON_RPC, debug_mode=False)
 
     if module.params['session'] is not None and not str(module.params['session']).isspace():
         client.api_session.cookies.set('domrobot', str(module.params['session']))
