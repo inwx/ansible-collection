@@ -1197,7 +1197,7 @@ def call_api_authenticated(module, method, params):
     else:
         api_url = ApiClient.API_OTE_URL
 
-    client = ApiClient(api_url=api_url, api_type=ApiType.JSON_RPC, debug_mode=True)
+    client = ApiClient(api_url=api_url, api_type=ApiType.JSON_RPC, debug_mode=False)
 
     if module.params['session'] is not None and not str(module.params['session']).isspace():
         client.api_session.cookies.set('domrobot', str(module.params['session']))
@@ -1300,7 +1300,12 @@ def create_record(module, value=None):
         module.fail_json(msg='API error.', result={'api_response': result})
         return None
 
-    return result['resData']['id']
+    created_records = get_records(module)
+    if created_records:
+        return created_records[0]
+
+    module.fail_json(msg='Record was created successfully but could not be fetched afterwards.')
+    return None
 
 
 def create_multiple_records(module):
@@ -1311,14 +1316,13 @@ def create_multiple_records(module):
     
     created_records = []
     for value in values:
-        record_id = create_record(module, value)
-        if record_id:
-            created_records.append(record_id)
+        record = create_record(module, value)
+        if record:
+            created_records.append(record)
     
     # Return the first created record for compatibility
     if created_records:
-        # Fetch the first record to return its details
-        return get_records(module)[0]
+        return created_records[0]
     return None
 
 
