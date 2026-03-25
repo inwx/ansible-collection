@@ -9,7 +9,7 @@ namespace: inwx
 name: collection
 
 # The version of the collection. Must be compatible with semantic versioning
-version: 1.3.0
+version: 1.4.1
 
 # The path to the Markdown (.md) readme file. This path is relative to the root of the collection
 readme: README.md
@@ -17,13 +17,13 @@ readme: README.md
 # A list of the collection's content authors. Can be just the name or in the format 'Full Name <email> (url)
 # @nicks:irc/im.site#channel'
 authors:
-- Nick Ufer <nu@inwx.de>
+- INWX GmbH <support@inwx.de>
 
 
 ### OPTIONAL but strongly recommended
 
 # A short summary description of the collection
-description: A collection of playbooks, roles and modules for INWX.
+description: A collection of playbooks, roles and modules for INWX domain and DNS operations.
 
 # The path to the license file for the collection. This path is relative to the root of the collection. This key is
 # mutually exclusive with 'license'
