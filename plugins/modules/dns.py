@@ -979,6 +979,10 @@ def build_record_uri(module):
     return str(module.params['priority']) + ' ' + str(module.params['weight']) + ' "' + value + '"'
 
 
+def build_record_mx(module):
+    return remove_suffix(get_single_value(module), '.')
+
+
 def build_default_record(module):
     return get_single_value(module)
 
@@ -997,7 +1001,7 @@ def build_record_content(module):
         'IPSECKEY': build_default_record,
         'KEY': build_record_key,
         'LOC': build_default_record,
-        'MX': build_default_record,
+        'MX': build_record_mx,
         'NAPTR': build_record_naptr,
         'NS': build_default_record,
         'OPENPGPKEY': build_record_openpgpkey,
