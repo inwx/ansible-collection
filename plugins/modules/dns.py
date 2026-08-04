@@ -1272,7 +1272,8 @@ def update_soa_record(module, record_id):
 def update_record_ttl(module, record_id):
     result = call_api_authenticated(module, 'nameserver.updateRecord', {
         'id': record_id,
-        'ttl': int(module.params['ttl'])
+        'ttl': int(module.params['ttl']),
+        'prio': int(module.params['priority'])
     })
 
     if result['code'] != 1000:
@@ -1534,8 +1535,8 @@ def run_module():
         elif found_records:
             # should only contain one record
             found_record = found_records[0]
-            if int(found_record['ttl']) != int(module.params['ttl']):
-                # record exists but with another ttl. Update it.
+            if int(found_record['ttl']) != int(module.params['ttl']) or int(found_record['priority']) != int(module.params['priority']):
+                # record exists but with different ttl or priority. Update it.
                 if module.check_mode:
                     updated_record = build_check_mode_record(module)
                     diff = create_diff(before_record=found_record, after_record=updated_record)
