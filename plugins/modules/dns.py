@@ -1535,7 +1535,9 @@ def run_module():
         elif found_records:
             # should only contain one record
             found_record = found_records[0]
-            if int(found_record['ttl']) != int(module.params['ttl']) or int(found_record['priority']) != int(module.params['priority']):
+            priority_changed = (module.params['type'] in ('MX', 'SRV', 'URI')
+                                and int(found_record['priority']) != int(module.params['priority']))
+            if int(found_record['ttl']) != int(module.params['ttl']) or priority_changed:
                 # record exists but with different ttl or priority. Update it.
                 if module.check_mode:
                     updated_record = build_check_mode_record(module)
