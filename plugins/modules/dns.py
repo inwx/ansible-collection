@@ -1063,10 +1063,7 @@ def get_record_fqdn(module):
         return record + '.' + str(module.params['domain'])
     elif str(module.params['type']) == 'PTR':
         if bool(module.params['reversedns']):
-            if sys.version_info.major == 3:
-                check_and_install_module(module, 'netaddr', 'python3-netaddr')
-            elif sys.version_info.major == 2:
-                check_and_install_module(module, 'netaddr', 'python-netaddr')
+            check_module_installed(module, 'netaddr')
             import netaddr
 
             return remove_suffix(netaddr.IPAddress(str(module.params['record'])).reverse_dns,
@@ -1361,43 +1358,17 @@ def delete_record(module, record_id):
     call_api_authenticated(module, 'nameserver.deleteRecord', {'id': record_id})
 
 
-def check_and_install_module(module, python_module_name, apt_module_name):
+def check_module_installed(module, python_module_name):
     """
-    Installs the module with the name of python_module_name if it is not already installed.
+    Fails with a clear message if python_module_name is not importable.
+    Does NOT install anything on the controller.
     """
-    import_successful = False
-
     import importlib
     try:
         importlib.import_module(python_module_name)
-        import_successful = True
     except ImportError:
-        pass
-
-    if not import_successful:
-        # don't make changes if we're in check_mode
-        if module.check_mode:
-            module.fail_json(msg="%s must be installed to use check mode. "
-                                 "If run normally this module can auto-install it." % python_module_name)
-
-        module.warn("Updating cache and auto-installing missing dependency: %s" % apt_module_name)
-        module.run_command(['apt-get', 'update'], check_rc=True)
-
-        # try to install the apt python package
-        module.run_command(['apt-get', 'install', '--no-install-recommends', apt_module_name, '-y', '-q'],
-                           check_rc=True)
-
-        import_successful = False
-        import importlib
-        try:
-            globals()[python_module_name] = importlib.import_module(python_module_name)
-            import_successful = True
-        except ImportError:
-            pass
-
-        if not import_successful:
-            module.fail_json(
-                msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
+        module.fail_json(
+            msg="{0} must be installed and visible from {1}.".format(python_module_name, sys.executable))
 
 
 def run_module():
@@ -1451,10 +1422,7 @@ def run_module():
     )
 
     # Required for Domrobot
-    if sys.version_info.major == 3:
-        check_and_install_module(module, 'requests', 'python3-requests')
-    elif sys.version_info.major == 2:
-        check_and_install_module(module, 'requests', 'python-requests')
+    check_module_installed(module, 'requests')
 
     found_records = get_records(module)
 
